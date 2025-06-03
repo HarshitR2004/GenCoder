@@ -1,6 +1,7 @@
 from django.urls import path
-from . import views
+from .views import TestCaseCreateView, TestCaseDetailView
 
 urlpatterns = [
-    path('generate', views.generate_testcase, name='generate_testcase'),
+    path('create/', TestCaseCreateView.as_view(), name='testcase-create'),
+    path('<int:testcase_id>/', TestCaseDetailView.as_view(), name='testcase-detail'),
 ]

@@ -1,110 +1,192 @@
+# questions/views.py
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-from .models import Question, Language
+from rest_framework import status
+from .models import Question, Language, Topic
 from testcase.models import TestCase
-import json
-import os
+from .serializers import QuestionCreateSerializer, QuestionDetailSerializer
+import logging
 
+logger = logging.getLogger(__name__)
 
-# Create your views here.
-@csrf_exempt
-def create_question(request):
-    """
-    View to handle question creation and automatic test case creation.
-    """
-    if request.method == 'POST':
+class QuestionCreateView(APIView):
+    def post(self, request):
+        """Create question with multiple test cases - supports both file and content upload"""
         try:
-            data = json.loads(request.body)
+            # Use serializer for validation
+            serializer = QuestionCreateSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response({
+                    'success': False,
+                    'errors': serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            data = serializer.validated_data
             
-            # Extract data
-            title = data.get('title', 'Untitled Question')
-            markdown_file_path = data.get('markdown_file_path')
-            input_data_path = data.get('input_data_path')
-            output_data_path = data.get('output_data_path')
-            difficulty = data.get('difficulty', 'easy')
-            language_id = data.get('language_id', 1)
-            
-            # Validate required fields
-            if not all([markdown_file_path, input_data_path, output_data_path]):
-                return JsonResponse({
-                    'error': 'Missing required fields: markdown_file_path, input_data_path, output_data_path'
-                }, status=400)
-            
-            # Validate files exist
-            if not os.path.exists(markdown_file_path):
-                return JsonResponse({
-                    'error': f'Markdown file not found: {markdown_file_path}'
-                }, status=404)
-                
-            if not os.path.exists(input_data_path):
-                return JsonResponse({
-                    'error': f'Input file not found: {input_data_path}'
-                }, status=404)
-                
-            if not os.path.exists(output_data_path):
-                return JsonResponse({
-                    'error': f'Output file not found: {output_data_path}'
-                }, status=404)
-            
-            # Step 1: Create TestCase first
-            testcase = TestCase()
-            testcase.genrate_input_output(input_data_path, output_data_path)
-            
-            # Step 2: Get language
-            try:
-                language = Language.objects.get(id=language_id)
-            except Language.DoesNotExist:
-                return JsonResponse({
-                    'error': f'Language with id {language_id} not found'
-                }, status=404)
-            
-            # Step 3: Create Question instance
+            # Step 1: Create Question
             question = Question(
-                title=title,
-                difficulty=difficulty,
-                test_cases=testcase,  # Link to the created test case
-                languages=language
+                title=data.get('title'),
+                difficulty=data.get('difficulty', 'easy')
             )
             
-            # Step 4: Process question files and create actual files
-            question_file_path, input_path, output_path = question.add_files_from_markdown(
-                markdown_file_path, input_data_path, output_data_path
-            )
+            # Create question in S3 - support both methods
+            if 'markdown_content' in data:
+                success = question.create_question_from_content(data['markdown_content'])
+            elif 'markdown_file_path' in data:
+                success = question.create_question_from_file(data['markdown_file_path'])
+            else:
+                return Response({
+                    'success': False,
+                    'error': 'Either markdown_content or markdown_file_path is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
             
-            # Verify all files were created
-            verification = {
-                'question_file_exists': os.path.exists(question_file_path),
-                'question_input_exists': os.path.exists(input_path),
-                'question_output_exists': os.path.exists(output_path),
-                'testcase_input_exists': os.path.exists(testcase.input_path),
-                'testcase_output_exists': os.path.exists(testcase.output_path),
-                'database_folder_exists': os.path.exists(f"database/question{question.id}")
-            }
+            if not success:
+                return Response({
+                    'success': False,
+                    'error': 'Failed to create question in S3'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            # Step 2: Handle test cases - both single and multiple
+            created_test_cases = []
             
-            return JsonResponse({
+            # Method 1: Single test case (backward compatibility)
+            if 'input_content' in data and 'output_content' in data:
+                test_case = question.add_test_case_from_content(
+                    data['input_content'],
+                    data['output_content'],
+                    is_example=True
+                )
+                created_test_cases.append(test_case)
+            elif 'input_file_path' in data and 'output_file_path' in data:
+                test_case = question.add_test_case_from_files(
+                    data['input_file_path'],
+                    data['output_file_path'],
+                    is_example=True
+                )
+                created_test_cases.append(test_case)
+            
+            # Method 2: Multiple test cases
+            test_cases_data = data.get('test_cases', [])
+            for i, test_case_data in enumerate(test_cases_data):
+                if 'input_content' in test_case_data and 'output_content' in test_case_data:
+                    test_case = question.add_test_case_from_content(
+                        test_case_data['input_content'],
+                        test_case_data['output_content'],
+                        is_example=test_case_data.get('is_example', i == 0),
+                        is_hidden=test_case_data.get('is_hidden', False)
+                    )
+                    created_test_cases.append(test_case)
+                elif 'input_file_path' in test_case_data and 'output_file_path' in test_case_data:
+                    test_case = question.add_test_case_from_files(
+                        test_case_data['input_file_path'],
+                        test_case_data['output_file_path'],
+                        is_example=test_case_data.get('is_example', i == 0),
+                        is_hidden=test_case_data.get('is_hidden', False)
+                    )
+                    created_test_cases.append(test_case)
+                else:
+                    return Response({
+                        'success': False,
+                        'error': f'Test case {i + 1} must have either content or file paths'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+            if not created_test_cases:
+                return Response({
+                    'success': False,
+                    'error': 'At least one test case is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Step 3: Add relationships
+            if 'language_ids' in data:
+                languages = Language.objects.filter(id__in=data['language_ids'])
+                question.languages.set(languages)
+
+            if 'topic_ids' in data:
+                topics = Topic.objects.filter(id__in=data['topic_ids'])
+                question.topics.set(topics)
+
+            return Response({
                 'success': True,
-                'message': 'Question and test case created successfully with actual files',
-                'verification': verification,
-                'data': {
-                    'question_id': question.id,
-                    'question_title': question.title,
-                    'question_file_path': question_file_path,
-                    'input_file_path': input_path,
-                    'output_file_path': output_path,
-                    'testcase_id': testcase.id,
-                    'testcase_input_path': testcase.input_path,
-                    'testcase_output_path': testcase.output_path,
-                    'difficulty': question.difficulty,
-                    'language': language.name
-                }
-            }, status=201)
-            
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+                'message': f'Question created successfully with {len(created_test_cases)} test cases',
+                'data': question.get_complete_question_data()
+            }, status=status.HTTP_201_CREATED)
+
         except Exception as e:
-            return JsonResponse({'error': f'An error occurred: {str(e)}'}, status=500)
-    
-    return JsonResponse({'error': 'Only POST method allowed'}, status=405)
+            logger.error(f"Error creating question: {e}")
+            return Response({
+                'success': False,
+                'error': f'An unexpected error occurred: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class TestCaseCreateView(APIView):
+    def post(self, request):
+        """Add a new test case to an existing question - supports both file and content upload"""
+        try:
+            data = request.data
+            question_id = data.get('question_id')
+            
+            if not question_id:
+                return Response({
+                    'success': False,
+                    'error': 'question_id is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                question = Question.objects.get(id=question_id)
+            except Question.DoesNotExist:
+                return Response({
+                    'success': False,
+                    'error': 'Question not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Support both content and file upload methods
+            test_case = None
+            if 'input_content' in data and 'output_content' in data:
+                test_case = question.add_test_case_from_content(
+                    data['input_content'],
+                    data['output_content'],
+                    is_example=data.get('is_example', False),
+                    is_hidden=data.get('is_hidden', False)
+                )
+            elif 'input_file_path' in data and 'output_file_path' in data:
+                test_case = question.add_test_case_from_files(
+                    data['input_file_path'],
+                    data['output_file_path'],
+                    is_example=data.get('is_example', False),
+                    is_hidden=data.get('is_hidden', False)
+                )
+            else:
+                return Response({
+                    'success': False,
+                    'error': 'Either content (input_content, output_content) or file paths (input_file_path, output_file_path) must be provided'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            if test_case:
+                return Response({
+                    'success': True,
+                    'message': 'Test case added successfully',
+                    'data': {
+                        'test_case_id': test_case.id,
+                        'question_id': question.id,
+                        'input_url': test_case.get_input_url(),
+                        'output_url': test_case.get_output_url(),
+                        'is_example': test_case.is_example,
+                        'is_hidden': test_case.is_hidden,
+                    }
+                }, status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    'success': False,
+                    'error': 'Failed to create test case'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+        except Exception as e:
+            logger.error(f"Error creating test case: {e}")
+            return Response({
+                'success': False,
+                'error': f'An unexpected error occurred: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# Keep other views unchanged...
+
 
