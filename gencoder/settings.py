@@ -131,11 +131,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # S3 Configuration
 USE_S3 = config('USE_S3', default=False, cast=bool)
-AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
-AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
-AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='gencoder-questions')
+AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='test')
+AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='test')
+AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='gencoder-bucket')
 AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='us-east-1')
-AWS_S3_ENDPOINT_URL = config('AWS_S3_ENDPOINT_URL', default=None) 
+AWS_S3_ENDPOINT_URL = config('AWS_S3_ENDPOINT_URL', default='http://localhost:4566') 
 
 # S3 Bucket Organization
 S3_QUESTIONS_PREFIX = 'questions/'
