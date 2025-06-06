@@ -1,7 +1,6 @@
 import boto3
 from gencoder import settings
-from rest_framework.response import Response
-
+from django.http import JsonResponse
 
 
 class S3Service:
@@ -25,7 +24,9 @@ class S3Service:
             )
             self.ensure_bucket_exists()
         except Exception as e:
-            print(f"Error initializing S3 client: {e}")
+            return JsonResponse(
+                {"error": "Failed to initialize S3 client", "details": str(e)},
+                status=500)
         
         
     def ensure_bucket_exists(self):
@@ -38,7 +39,9 @@ class S3Service:
         except self.s3_client.exceptions.NoSuchBucket:
             self.s3_client.create_bucket(Bucket=self.bucket_name)
         except Exception as e:
-            print(f"Error ensuring bucket exists: {e}")
+            return JsonResponse(
+                {"error": "Failed to ensure bucket exists", "details": str(e)},
+                status=500)
         
     def upload_question(self, question_id, question_content):
         """
@@ -52,8 +55,25 @@ class S3Service:
                     Body=question_content
             )
         except Exception as e:
-            print(f"Error uploading question {question_id}: {e}")
-            raise
+            return JsonResponse(    
+                {"error": "Failed to upload question", "details": str(e)},
+                status=500)
+            
+    def get_question(self, question_id):
+        """
+        Retrieve the question markdown content from S3.
+        """    
+        key = f"questions/question_{question_id}/question.md"
+        try:
+            response = self.s3_client.get_object(
+                Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+                Key=key
+            )
+            return response['Body'].read().decode('utf-8')
+        except self.s3_client.exceptions.NoSuchKey:
+                return JsonResponse(
+                    {"error": "Question not found"},
+                    status=404)
 
     def upload_input(self, question_id, case_id, input_data):
         """
@@ -67,8 +87,9 @@ class S3Service:
                 Body=input_data
             )
         except Exception as e:
-            print(f"Error uploading input for question {question_id}, case {case_id}: {e}")
-            raise
+            return JsonResponse(
+                {"error": "Failed to upload input", "details": str(e)},
+                status=500)
 
     def upload_output(self, question_id, case_id, output_data):
         """
@@ -82,8 +103,9 @@ class S3Service:
                 Body=output_data
             )
         except Exception as e:
-            print(f"Error uploading output for question {question_id}, case {case_id}: {e}")
-            raise
+            return JsonResponse(
+                {"error": "Failed to upload output", "details": str(e)},
+                status=500)
 
 
 
