@@ -3,6 +3,8 @@ from rest_framework.views import APIView
 from utils.storage.s3_service import S3Service
 from .serializers import QuestionSerializer
 from rest_framework.response import Response
+from django.core.files.uploadedfile import UploadedFile
+from .models import Question
 
 s3 = S3Service()
 
@@ -12,19 +14,18 @@ class QuestionAPIView(APIView):
     This can be extended for specific question-related endpoints.
     """
     
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         """
-        This gets the question content from S3 based on the provided question ID.
+        Handle POST requests to create a new question.
         """
         serializer = QuestionSerializer(data=request.data)
-        if serializer.is_valid():
-            question_id = serializer.validated_data.get('id')
-            question_content = s3.get_question(question_id)
-            
-            return Response({
-                'question_id': question_id,
-                'content': question_content
-            }, status=200) 
-        else:
-            return Response(serializer.errors, status=400) 
+        if not serializer.is_valid():
+          return Response(serializer.errors, status=400)
+        question = serializer.save()
+        markdown_file = request.FILES.get('markdown_file')
+        upload_result = s3.upload_question_file(markdown_file, question.id) if isinstance(markdown_file, UploadedFile) else None
+        return upload_result
+        
+    
+    
         

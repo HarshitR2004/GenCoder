@@ -1,7 +1,7 @@
 import boto3
 from gencoder import settings
 from django.http import JsonResponse
-
+from rest_framework.response import Response
 
 class S3Service:
     """
@@ -24,9 +24,7 @@ class S3Service:
             )
             self.ensure_bucket_exists()
         except Exception as e:
-            return JsonResponse(
-                {"error": "Failed to initialize S3 client", "details": str(e)},
-                status=500)
+            raise Exception(f"Failed to initialize S3 client: {str(e)}")
         
         
     def ensure_bucket_exists(self):
@@ -39,10 +37,31 @@ class S3Service:
         except self.s3_client.exceptions.NoSuchBucket:
             self.s3_client.create_bucket(Bucket=self.bucket_name)
         except Exception as e:
-            return JsonResponse(
+            return Response(
                 {"error": "Failed to ensure bucket exists", "details": str(e)},
                 status=500)
-        
+    
+    def upload_question_file(self, uploaded_file, question_id):
+        """
+        Upload a markdown file to S3.
+        :param file_path: Local path to the markdown file.
+        :param question_id: ID of the question to associate with the file.
+        """
+           
+        key = f"questions/question_{question_id}/question.md"
+        try:
+            self.s3_client.put_object(
+                Bucket=self.bucket_name,
+                Key=key,
+                Body=uploaded_file.read(),
+                ContentType='text/markdown'
+            )
+            return Response({"message": "File uploaded successfully"}, status=200)
+        except Exception as e:
+            return Response(
+                {"error": "Failed to upload file", "details": str(e)},
+                status=500)
+      
     def upload_question(self, question_id, question_content):
         """
         Upload the question markdown content as question.md inside
@@ -52,7 +71,8 @@ class S3Service:
             self.s3_client.put_object(
                     Bucket=settings.AWS_STORAGE_BUCKET_NAME,
                     Key=key,
-                    Body=question_content
+                    Body=question_content,
+                    ContentType='text/markdown'
             )
         except Exception as e:
             return JsonResponse(    
