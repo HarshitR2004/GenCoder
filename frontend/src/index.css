@@ -31,9 +31,10 @@
 
     --border: 0 0% 15%;
     --input: 0 0% 15%;
-    --ring: 120 84% 45%;
+  }
 
-    --radius: 0.5rem;
+  html {
+    background-color: black !important;
   }
 
   * {
@@ -43,6 +44,14 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter';
+    background-color: black !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  #root {
+    background-color: black !important;
+    min-height: 100vh;
   }
 }
 
