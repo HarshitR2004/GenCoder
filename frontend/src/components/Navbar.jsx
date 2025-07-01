@@ -3,22 +3,38 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { LogOut, User, Settings } from 'lucide-react'
 
+// Import reusable UI components
+import Button from './ui/Button'
+
 const Navbar = () => {
   const { user, logout } = useAuth()
 
   return (
     <div className="navbar bg-base-200 shadow-lg">
       <div className="navbar-start">
-        <Link to="/questions" className="btn btn-ghost normal-case text-xl">
+        <Button 
+          as={Link} 
+          to="/questions" 
+          variant="ghost" 
+          className="normal-case text-xl"
+        >
           <span className="text-primary font-bold">GenCoder</span>
-        </Link>
+        </Button>
       </div>
       
       <div className="navbar-center hidden lg:flex">
         <ul className="menu menu-horizontal px-1">
-          <li><Link to="/questions" className="btn btn-ghost">Questions</Link></li>
+          <li>
+            <Button as={Link} to="/questions" variant="ghost">
+              Questions
+            </Button>
+          </li>
           {user?.role === 'admin' && (
-            <li><Link to="/admin" className="btn btn-ghost">Admin</Link></li>
+            <li>
+              <Button as={Link} to="/admin" variant="ghost">
+                Admin
+              </Button>
+            </li>
           )}
         </ul>
       </div>
@@ -39,10 +55,14 @@ const Navbar = () => {
             </li>
             <li><hr className="my-2" /></li>
             <li>
-              <button onClick={logout} className="text-error">
-                <LogOut size={16} />
+              <Button 
+                onClick={logout} 
+                variant="ghost"
+                className="text-error justify-start"
+                icon={<LogOut size={16} />}
+              >
                 Logout
-              </button>
+              </Button>
             </li>
           </ul>
         </div>

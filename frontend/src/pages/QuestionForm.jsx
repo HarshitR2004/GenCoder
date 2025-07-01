@@ -5,6 +5,18 @@ import { Save, X, FileText, Eye, EyeOff, Download, Plus, Trash2, Tag, Code, Copy
 import ReactMarkdown from 'react-markdown'
 import Editor from '@monaco-editor/react'
 
+// Import reusable UI components
+import { Card, CardHeader, CardContent, CardTitle } from '../components/ui/Card'
+import Button from '../components/ui/Button'
+import Input from '../components/ui/Input'
+import Select from '../components/ui/Select'
+import Textarea from '../components/ui/Textarea'
+import Alert from '../components/ui/Alert'
+import Tabs from '../components/ui/Tabs'
+import Badge from '../components/ui/Badge'
+import LoadingSpinner from '../components/ui/LoadingSpinner'
+import TopicSelector from '../components/form/TopicSelector'
+
 const QuestionForm = () => {
   // =============================================
   // ROUTING AND AUTHENTICATION SETUP
@@ -421,10 +433,7 @@ console.log(solution());`
   if (loading && isEditing) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-base-100">
-        <div className="text-center">
-          <div className="loading loading-spinner loading-lg text-primary mb-4"></div>
-          <p className="text-base-content/60">Loading question...</p>
-        </div>
+        <LoadingSpinner size="lg" text="Loading question..." />
       </div>
     )
   }
@@ -440,46 +449,45 @@ console.log(solution());`
           {/* =============================================
               HEADER SECTION - Page Title and Navigation
               ============================================= */}
-          <div className="bg-base-100 rounded-2xl shadow-xl p-6 mb-6">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">
-                  {isEditing ? 'Edit Question' : 'Create New Question'}
-                </h1>
-                <p className="text-base-content/70 text-lg">
-                  {isEditing ? 'Update your coding challenge' : 'Design an engaging coding challenge'}
-                </p>
-                <p className="text-sm text-base-content/50 mt-2">
-                  Questions are automatically available in all programming languages
-                </p>
+          <Card className="mb-6">
+            <CardContent>
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">
+                    {isEditing ? 'Edit Question' : 'Create New Question'}
+                  </h1>
+                  <p className="text-base-content/70 text-lg">
+                    {isEditing ? 'Update your coding challenge' : 'Design an engaging coding challenge'}
+                  </p>
+                  <p className="text-sm text-base-content/50 mt-2">
+                    Questions are automatically available in all programming languages
+                  </p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="md"
+                  onClick={() => navigate('/questions')}
+                  icon={<X size={18} />}
+                >
+                  Cancel
+                </Button>
               </div>
-              <button 
-                onClick={() => navigate('/questions')}
-                className="btn btn-ghost btn-sm md:btn-md"
-              >
-                <X size={18} />
-                Cancel
-              </button>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* =============================================
               ALERT MESSAGES - Error and Success Notifications
               ============================================= */}
           {error && (
-            <div className="alert alert-error mb-6 shadow-lg">
-              <div>
-                <span className="font-medium">{error}</span>
-              </div>
-            </div>
+            <Alert type="error" className="mb-6">
+              {error}
+            </Alert>
           )}
 
           {success && (
-            <div className="alert alert-success mb-6 shadow-lg">
-              <div>
-                <span className="font-medium">{success}</span>
-              </div>
-            </div>
+            <Alert type="success" className="mb-6">
+              {success}
+            </Alert>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -487,179 +495,113 @@ console.log(solution());`
             {/* =============================================
                 BASIC INFORMATION SECTION - Title and Difficulty
                 ============================================= */}
-            <div className="bg-base-100 rounded-2xl shadow-lg overflow-hidden">
-              <div className="bg-gradient-to-r from-primary/10 to-secondary/10 px-6 py-4 border-b border-base-300">
-                <h2 className="text-xl font-bold text-base-content flex items-center gap-2">
-                  <FileText size={20} />
+            <Card>
+              <CardHeader gradient="bg-gradient-to-r from-primary/10 to-secondary/10">
+                <CardTitle icon={<FileText size={20} />}>
                   Basic Information
-                </h2>
-              </div>
+                </CardTitle>
+              </CardHeader>
               
-              <div className="p-6">
+              <CardContent>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Question Title Input */}
                   <div className="lg:col-span-2">
-                    <label className="label">
-                      <span className="label-text font-semibold text-base">Question Title</span>
-                    </label>
-                    <input
-                      type="text"
+                    <Input
+                      label="Question Title"
                       name="title"
                       value={formData.title}
                       onChange={handleInputChange}
-                      className="input input-bordered w-full input-lg"
                       placeholder="e.g., Two Sum Problem"
                       required
+                      size="lg"
                     />
                   </div>
 
                   {/* Difficulty Level Selection */}
                   <div>
-                    <label className="label">
-                      <span className="label-text font-semibold text-base">Difficulty Level</span>
-                    </label>
-                    <select
+                    <Select
+                      label="Difficulty Level"
                       name="difficulty"
                       value={formData.difficulty}
                       onChange={handleInputChange}
-                      className="select select-bordered w-full select-lg"
-                    >
-                      <option value="easy">Easy</option>
-                      <option value="medium">Medium</option>
-                      <option value="hard">Hard</option>
-                    </select>
+                      size="lg"
+                      options={[
+                        { value: 'easy', label: 'Easy' },
+                        { value: 'medium', label: 'Medium' },
+                        { value: 'hard', label: 'Hard' }
+                      ]}
+                    />
                   </div>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* =============================================
                 TOPICS SELECTION SECTION - Multi-select Topics
                 ============================================= */}
-            <div className="bg-base-100 rounded-2xl shadow-lg overflow-hidden">
-              <div className="bg-gradient-to-r from-info/10 to-success/10 px-6 py-4 border-b border-base-300">
-                <h2 className="text-xl font-bold text-base-content flex items-center gap-2">
-                  <Tag size={20} />
+            <Card>
+              <CardHeader gradient="bg-gradient-to-r from-info/10 to-success/10">
+                <CardTitle icon={<Tag size={20} />}>
                   Question Topics
-                </h2>
-              </div>
+                </CardTitle>
+              </CardHeader>
               
-              <div className="p-6">
-                {/* Topics Selection Grid */}
-                <div>
-                  <label className="label">
-                  </label>
-                  
-                  {/* Scrollable Topics List */}
-                  <div className="bg-base-200 rounded-lg p-4 max-h-64 overflow-y-auto">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {topics.map((topic) => (
-                        <label key={topic.id} className="cursor-pointer flex items-center gap-3 p-3 rounded-lg hover:bg-base-300 transition-colors">
-                          <input
-                            type="checkbox"
-                            checked={formData.topic_ids.includes(topic.id)}
-                            onChange={() => handleTopicChange(topic.id)}
-                            className="checkbox checkbox-primary"
-                          />
-                          <span className="label-text font-medium flex-1">
-                            {topic.name || topic.topic}
-                          </span>
-                          {topic.question_count !== undefined && (
-                            <span className="badge badge-secondary badge-sm">
-                              {topic.question_count}
-                            </span>
-                          )}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* Selection Summary */}
-                  <div className="mt-3 flex justify-between items-center">
-                    <span className="text-sm text-base-content/60">
-                      Selected: {formData.topic_ids.length} topic{formData.topic_ids.length !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Selected Topics Display */}
-                {formData.topic_ids.length > 0 && (
-                  <div className="mt-6 p-4 bg-base-300 rounded-lg">
-                    <h4 className="font-semibold mb-3">Selected Topics:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {formData.topic_ids.map(topicId => {
-                        const topic = topics.find(t => t.id === topicId)
-                        return topic ? (
-                          <div key={`topic-${topicId}`} className="badge badge-primary gap-2">
-                            <Tag size={12} />
-                            {topic.name || topic.topic}
-                            <button
-                              type="button"
-                              onClick={() => handleTopicChange(topicId)}
-                              className="btn btn-ghost btn-xs text-primary-content hover:text-error"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ) : null
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+              <CardContent>
+                <TopicSelector
+                  topics={topics}
+                  selectedTopicIds={formData.topic_ids}
+                  onTopicChange={handleTopicChange}
+                />
+              </CardContent>
+            </Card>
 
             {/* =============================================
                 PROBLEM STATEMENT SECTION - Markdown Editor with Preview
                 ============================================= */}
-            <div className="bg-base-100 rounded-2xl shadow-lg overflow-hidden">
-              <div className="bg-gradient-to-r from-secondary/10 to-accent/10 px-6 py-4 border-b border-base-300">
+            <Card>
+              <CardHeader gradient="bg-gradient-to-r from-secondary/10 to-accent/10">
                 <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-                  <h2 className="text-xl font-bold text-base-content flex items-center gap-2">
-                    <FileText size={20} />
+                  <CardTitle icon={<FileText size={20} />}>
                     Problem Statement
-                  </h2>
+                  </CardTitle>
                   {/* Markdown Editor Controls */}
                   <div className="flex gap-2">
-                    <button
-                      type="button"
+                    <Button
+                      variant={showPreview ? 'primary' : 'outline'}
+                      size="sm"
                       onClick={() => setShowPreview(!showPreview)}
-                      className={`btn btn-sm ${showPreview ? 'btn-primary' : 'btn-outline'}`}
+                      icon={showPreview ? <EyeOff size={16} /> : <Eye size={16} />}
                     >
-                      {showPreview ? <EyeOff size={16} /> : <Eye size={16} />}
                       {showPreview ? 'Hide Preview' : 'Show Preview'}
-                    </button>
+                    </Button>
                     {formData.markdown_content && (
-                      <button
-                        type="button"
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={downloadMarkdown}
-                        className="btn btn-sm btn-outline"
+                        icon={<Download size={16} />}
                       >
-                        <Download size={16} />
                         Download
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
-              </div>
+              </CardHeader>
 
-              <div className="p-6">
+              <CardContent>
                 {/* Markdown Editor and Preview Grid */}
                 <div className={`grid gap-6 ${showPreview ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1'}`}>
                   
                   {/* Markdown Text Editor */}
                   <div className="space-y-2">
-                    <label className="label">
-                      <span className="label-text font-semibold text-base">Markdown Content</span>
-                    </label>
-                    <div className="relative">
-                      <textarea
-                        name="markdown_content"
-                        value={formData.markdown_content}
-                        onChange={handleInputChange}
-                        className="textarea textarea-bordered w-full font-mono text-sm resize-none"
-                        style={{ height: '500px' }}
-                        placeholder={`# Problem Title
+                    <Textarea
+                      label="Markdown Content"
+                      name="markdown_content"
+                      value={formData.markdown_content}
+                      onChange={handleInputChange}
+                      className="font-mono text-sm resize-none"
+                      style={{ height: '500px' }}
+                      placeholder={`# Problem Title
 
 ## Description
 Write your problem description here...
@@ -678,12 +620,13 @@ Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].
 
 ## Follow-up
 - Optional follow-up questions...`}
-                        required
-                      />
-                      {/* Character Counter */}
-                      <div className="absolute bottom-2 right-2 text-xs text-base-content/40 bg-base-100 px-2 py-1 rounded">
+                      required
+                    />
+                    {/* Character Counter */}
+                    <div className="text-right">
+                      <span className="text-xs text-base-content/40">
                         {formData.markdown_content.length} characters
-                      </div>
+                      </span>
                     </div>
                   </div>
 
@@ -742,20 +685,19 @@ Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* =============================================
                 STARTER CODE SECTION - Monaco Code Editor
                 ============================================= */}
-            <div className="bg-base-100 rounded-2xl shadow-lg overflow-hidden">
-              <div className="bg-gradient-to-r from-warning/10 to-info/10 px-6 py-4 border-b border-base-300">
+            <Card>
+              <CardHeader gradient="bg-gradient-to-r from-warning/10 to-info/10">
                 <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                   <div>
-                    <h2 className="text-xl font-bold text-base-content flex items-center gap-2">
-                      <Code size={20} />
+                    <CardTitle icon={<Code size={20} />}>
                       Starter Code Templates
-                    </h2>
+                    </CardTitle>
                     <p className="text-sm text-base-content/60 mt-1">
                       Provide initial code templates for each programming language
                     </p>
@@ -764,35 +706,37 @@ Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].
                   {/* Theme Selector */}
                   <div className="flex items-center gap-2">
                     <label className="text-sm font-medium">Theme:</label>
-                    <select
+                    <Select
                       value={editorTheme}
                       onChange={(e) => setEditorTheme(e.target.value)}
-                      className="select select-bordered select-sm"
-                    >
-                      <option value="vs-dark">VS Dark</option>
-                      <option value="light">Light</option>
-                      <option value="hc-black">High Contrast</option>
-                    </select>
+                      size="sm"
+                      options={[
+                        { value: 'vs-dark', label: 'VS Dark' },
+                        { value: 'light', label: 'Light' },
+                        { value: 'hc-black', label: 'High Contrast' }
+                      ]}
+                    />
                   </div>
                 </div>
-              </div>
+              </CardHeader>
               
-              <div className="p-6">
+              <CardContent>
                 {/* Language Tabs */}
                 <div className="tabs tabs-bordered mb-6 overflow-x-auto">
                   {languages.map((language) => (
-                    <button
+                    <Button
                       key={language.name}
-                      type="button"
+                      variant="ghost"
+                      size="lg"
                       onClick={() => setActiveLanguageTab(language.name)}
                       className={`tab tab-lg flex-shrink-0 ${activeLanguageTab === language.name ? 'tab-active' : ''}`}
+                      icon={<Code size={16} />}
                     >
-                      <Code size={16} className="mr-2" />
                       {language.name.charAt(0).toUpperCase() + language.name.slice(1)}
-                      <div className="badge badge-outline ml-2">
+                      <Badge variant="outline" size="sm" className="ml-2">
                         {language.name === 'cpp' ? '.cpp' : `.${language.name}`}
-                      </div>
-                    </button>
+                      </Badge>
+                    </Button>
                   ))}
                 </div>
 
@@ -813,33 +757,26 @@ Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].
                         
                         {/* Code Editor Controls */}
                         <div className="flex gap-2">
-                          <button
-                            type="button"
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => copyStarterCode(language.name)}
-                            className="btn btn-sm btn-outline"
-                            title="Copy code"
+                            icon={copiedLanguage === language.name ? 
+                              <Check size={16} className="text-success" /> : 
+                              <Copy size={16} />
+                            }
                           >
-                            {copiedLanguage === language.name ? (
-                              <>
-                                <Check size={16} className="text-success" />
-                                Copied!
-                              </>
-                            ) : (
-                              <>
-                                <Copy size={16} />
-                                Copy
-                              </>
-                            )}
-                          </button>
-                          <button
-                            type="button"
+                            {copiedLanguage === language.name ? 'Copied!' : 'Copy'}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => resetStarterCode(language.name)}
-                            className="btn btn-sm btn-outline btn-warning"
-                            title="Reset to default template"
+                            className="btn-warning"
+                            icon={<RotateCcw size={16} />}
                           >
-                            <RotateCcw size={16} />
                             Reset
-                          </button>
+                          </Button>
                         </div>
                       </div>
 
@@ -859,14 +796,7 @@ Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].
                             insertSpaces: true,
                             wordWrap: 'on'
                           }}
-                          loading={
-                            <div className="flex items-center justify-center h-96">
-                              <div className="text-center">
-                                <div className="loading loading-spinner loading-lg text-primary mb-4"></div>
-                                <p className="text-base-content/60">Loading editor...</p>
-                              </div>
-                            </div>
-                          }
+                          loading={<LoadingSpinner size="lg" text="Loading editor..." />}
                         />
                       </div>
 
@@ -884,32 +814,31 @@ Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].
                     </div>
                   )
                 ))}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* =============================================
                 TEST CASES SECTION - Input/Output Test Cases Management
                 ============================================= */}
-            <div className="bg-base-100 rounded-2xl shadow-lg overflow-hidden">
-              <div className="bg-gradient-to-r from-accent/10 to-warning/10 px-6 py-4 border-b border-base-300">
+            <Card>
+              <CardHeader gradient="bg-gradient-to-r from-accent/10 to-warning/10">
                 <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-bold text-base-content flex items-center gap-2">
-                    <FileText size={20} />
+                  <CardTitle icon={<FileText size={20} />}>
                     Test Cases
-                  </h2>
+                  </CardTitle>
                   {/* Add New Test Case Button */}
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
+                    size="sm"
                     onClick={addTestCase}
-                    className="btn btn-primary btn-sm"
+                    icon={<Plus size={16} />}
                   >
-                    <Plus size={16} />
                     Add Test Case
-                  </button>
+                  </Button>
                 </div>
-              </div>
+              </CardHeader>
 
-              <div className="p-6 space-y-6">
+              <CardContent className="space-y-6">
                 {/* Dynamic Test Cases List */}
                 {formData.test_cases.map((testCase, index) => (
                   <div key={index} className="bg-base-200 rounded-xl p-5 border border-base-300">
@@ -925,14 +854,14 @@ Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].
                       
                       {/* Remove Test Case Button (only show if more than 1 test case) */}
                       {formData.test_cases.length > 1 && (
-                        <button
-                          type="button"
+                        <Button
+                          variant="error"
+                          size="sm"
                           onClick={() => removeTestCase(index)}
-                          className="btn btn-error btn-sm"
+                          icon={<Trash2 size={14} />}
                         >
-                          <Trash2 size={14} />
                           Remove
-                        </button>
+                        </Button>
                       )}
                     </div>
 
@@ -940,13 +869,11 @@ Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
                       {/* Input Data Field */}
                       <div>
-                        <label className="label">
-                          <span className="label-text font-semibold">Input Data</span>
-                        </label>
-                        <textarea
+                        <Textarea
+                          label="Input Data"
                           value={testCase.input_content}
                           onChange={(e) => handleTestCaseChange(index, 'input_content', e.target.value)}
-                          className="textarea textarea-bordered w-full h-28 font-mono text-sm"
+                          className="h-28 font-mono text-sm"
                           placeholder="Enter the input for this test case..."
                           required
                         />
@@ -954,77 +881,68 @@ Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].
 
                       {/* Expected Output Field */}
                       <div>
-                        <label className="label">
-                          <span className="label-text font-semibold">Expected Output</span>
-                        </label>
-                        <textarea
+                        <Textarea
+                          label="Expected Output"
                           value={testCase.output_content}
                           onChange={(e) => handleTestCaseChange(index, 'output_content', e.target.value)}
-                          className="textarea textarea-bordered w-full h-28 font-mono text-sm"
+                          className="h-28 font-mono text-sm"
                           placeholder="Enter the expected output..."
                           required
                         />
                       </div>
                     </div>
 
-                  
                   </div>
                 ))}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* =============================================
                 FORM SUBMISSION SECTION - Save/Cancel Actions
                 ============================================= */}
-            <div className="bg-base-100 rounded-2xl shadow-lg p-6">
-              <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                {/* Form Submission Information */}
-                <div className="text-center md:text-left">
-                  <p className="text-base-content/70">
-                    Ready to {isEditing ? 'update' : 'publish'} your question?
-                  </p>
-                  <p className="text-sm text-base-content/50">
-                    Make sure all required fields are filled out correctly.
-                  </p>
-                  <p className="text-xs text-success mt-1">
-                    Will be available in all programming languages automatically
-                  </p>
-                </div>
-                
-                {/* Action Buttons */}
-                <div className="flex gap-3">
-                  {/* Cancel Button */}
-                  <button
-                    type="button"
-                    onClick={() => navigate('/questions')}
-                    className="btn btn-outline btn-lg"
-                  >
-                    Cancel
-                  </button>
+            <Card>
+              <CardContent>
+                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                  {/* Form Submission Information */}
+                  <div className="text-center md:text-left">
+                    <p className="text-base-content/70">
+                      Ready to {isEditing ? 'update' : 'publish'} your question?
+                    </p>
+                    <p className="text-sm text-base-content/50">
+                      Make sure all required fields are filled out correctly.
+                    </p>
+                    <p className="text-xs text-success mt-1">
+                      Will be available in all programming languages automatically
+                    </p>
+                  </div>
                   
-                  {/* Submit Button */}
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="btn btn-primary btn-lg min-w-[200px]"
-                  >
-                    {loading ? (
-                      /* Loading State */
-                      <>
-                        <span className="loading loading-spinner loading-sm mr-2"></span>
-                        Saving...
-                      </>
-                    ) : (
-                      /* Normal State */
-                      <>
-                        <Save size={20} className="mr-2" />
-                        {isEditing ? 'Update Question' : 'Create Question'}
-                      </>
-                    )}
-                  </button>
+                  {/* Action Buttons */}
+                  <div className="flex gap-3">
+                    {/* Cancel Button */}
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={() => navigate('/questions')}
+                    >
+                      Cancel
+                    </Button>
+                    
+                    {/* Submit Button */}
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="lg"
+                      disabled={loading}
+                      loading={loading}
+                      className="min-w-[200px]"
+                      icon={!loading && <Save size={20} />}
+                    >
+                      {isEditing ? 'Update Question' : 'Create Question'}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </form>
         </div>
       </div>

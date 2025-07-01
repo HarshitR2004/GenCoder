@@ -3,6 +3,14 @@ import { Link } from 'react-router-dom'
 import { Search, Plus, Code, Clock, Star } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
+// Import reusable UI components
+import { Card, CardContent } from '../components/ui/Card'
+import Button from '../components/ui/Button'
+import Input from '../components/ui/Input'
+import Alert from '../components/ui/Alert'
+import Badge from '../components/ui/Badge'
+import LoadingSpinner from '../components/ui/LoadingSpinner'
+
 const Questions = () => {
   const [questions, setQuestions] = useState([])
   const [loading, setLoading] = useState(true)
@@ -70,17 +78,17 @@ const Questions = () => {
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty?.toLowerCase()) {
-      case 'easy': return 'badge-success'
-      case 'medium': return 'badge-warning'
-      case 'hard': return 'badge-error'
-      default: return 'badge-neutral'
+      case 'easy': return 'success'
+      case 'medium': return 'warning'
+      case 'hard': return 'error'
+      default: return 'neutral'
     }
   }
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="loading loading-spinner loading-lg text-primary"></div>
+        <LoadingSpinner size="lg" />
       </div>
     )
   }
@@ -93,32 +101,34 @@ const Questions = () => {
           <p className="text-base-content/60">Master your programming skills with our curated problems</p>
         </div>
         {user?.role === 'admin' && (
-          <Link to="/admin/questions/new" className="btn btn-primary">
-            <Plus size={20} />
+          <Button
+            as={Link}
+            to="/admin/questions/new"
+            variant="primary"
+            icon={<Plus size={20} />}
+          >
             Add Question
-          </Link>
+          </Button>
         )}
       </div>
 
       <div className="mb-6">
         <div className="form-control w-full max-w-md">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search questions..."
-              className="input input-bordered w-full pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <Search className="absolute left-3 top-3 h-5 w-5 text-base-content/40" />
-          </div>
+          <Input
+            type="text"
+            placeholder="Search questions..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            icon={<Search className="h-5 w-5 text-base-content/40" />}
+            className="pl-10"
+          />
         </div>
       </div>
 
       {error && (
-        <div className="alert alert-error mb-6">
-          <span>Error: {error}</span>
-        </div>
+        <Alert type="error" className="mb-6">
+          Error: {error}
+        </Alert>
       )}
 
       {/* Pagination Info */}
@@ -130,13 +140,13 @@ const Questions = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredQuestions.map((question) => (
-          <div key={question.id} className="card bg-base-200 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="card-body">
+          <Card key={question.id} className="bg-base-200 hover:shadow-xl transition-shadow">
+            <CardContent>
               <div className="flex justify-between items-start mb-3">
                 <h2 className="card-title text-lg">{question.title || 'Untitled Question'}</h2>
-                <div className={`badge ${getDifficultyColor(question.difficulty)}`}>
+                <Badge variant={getDifficultyColor(question.difficulty)}>
                   {question.difficulty || 'Medium'}
-                </div>
+                </Badge>
               </div>
               
               <p className="text-base-content/80 mb-4 line-clamp-3">
@@ -145,11 +155,11 @@ const Questions = () => {
 
               <div className="flex flex-wrap gap-2 mb-4">
                 {question.tags?.map((tag, index) => (
-                  <span key={index} className="badge badge-outline badge-sm">
+                  <Badge key={index} variant="outline" size="sm">
                     {tag}
-                  </span>
+                  </Badge>
                 )) || (
-                  <span className="badge badge-outline badge-sm">General</span>
+                  <Badge variant="outline" size="sm">General</Badge>
                 )}
               </div>
 
@@ -165,35 +175,37 @@ const Questions = () => {
               </div>
 
               <div className="card-actions justify-end">
-                <Link 
+                <Button
+                  as={Link}
                   to={`/questions/${question.id}`}
-                  className="btn btn-primary btn-sm"
+                  variant="primary"
+                  size="sm"
                 >
                   Solve Challenge
-                </Link>
+                </Button>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
       {/* Pagination Controls */}
       {(pagination.previous || pagination.next) && (
         <div className="flex justify-center gap-4 mt-8">
-          <button 
-            className="btn btn-outline"
+          <Button
+            variant="outline"
             disabled={!pagination.previous}
-            onClick={() => fetchQuestions(1)} // Simplified - you'd need to parse page number from URL
+            onClick={() => fetchQuestions(1)}
           >
             Previous
-          </button>
-          <button 
-            className="btn btn-outline"
+          </Button>
+          <Button
+            variant="outline"
             disabled={!pagination.next}
-            onClick={() => fetchQuestions(2)} // Simplified - you'd need to parse page number from URL
+            onClick={() => fetchQuestions(2)}
           >
             Next
-          </button>
+          </Button>
         </div>
       )}
 

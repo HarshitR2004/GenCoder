@@ -2,6 +2,13 @@ import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Edit, Trash2, Users, FileText, TrendingUp, Clock } from 'lucide-react'
 
+// Import reusable UI components
+import { Card, CardHeader, CardContent, CardTitle } from '../components/ui/Card'
+import Button from '../components/ui/Button'
+import Alert from '../components/ui/Alert'
+import Badge from '../components/ui/Badge'
+import LoadingSpinner from '../components/ui/LoadingSpinner'
+
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
     totalQuestions: 0,
@@ -81,10 +88,10 @@ const AdminDashboard = () => {
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty?.toLowerCase()) {
-      case 'easy': return 'badge-success'
-      case 'medium': return 'badge-warning'
-      case 'hard': return 'badge-error'
-      default: return 'badge-neutral'
+      case 'easy': return 'success'
+      case 'medium': return 'warning'
+      case 'hard': return 'error'
+      default: return 'neutral'
     }
   }
 
@@ -95,10 +102,14 @@ const AdminDashboard = () => {
           <h1 className="text-4xl font-bold text-primary mb-2">Admin Dashboard</h1>
           <p className="text-base-content/60">Manage your coding challenge platform</p>
         </div>
-        <Link to="/admin/questions/new" className="btn btn-primary">
-          <Plus size={20} />
+        <Button
+          as={Link}
+          to="/admin/questions/new"
+          variant="primary"
+          icon={<Plus size={20} />}
+        >
           Add New Question
-        </Link>
+        </Button>
       </div>
 
       {/* Stats Cards */}
