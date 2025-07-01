@@ -19,7 +19,7 @@ class Topic(models.Model):
         ('sorting', 'Sorting'),
     )
 
-    topic = models.CharField(max_length=100, choices=TOPIC_CHOICES, default='arrays')
+    topic = models.CharField(max_length=100, choices=TOPIC_CHOICES, default='arrays', unique=True)
     
     def __str__(self):
         return self.get_topic_display()
@@ -31,7 +31,7 @@ class Language(models.Model):
         ('cpp', 'C++'),
     )
     
-    name = models.CharField(max_length=100, default='python', choices=LANGUAGE_CHOICES)
+    name = models.CharField(max_length=100, default='python', choices=LANGUAGE_CHOICES, unique=True)
 
     def __str__(self):
         return self.get_name_display()

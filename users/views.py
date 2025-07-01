@@ -1,7 +1,10 @@
 from .serializers import UserSerializer 
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from rest_framework.views import APIView
 from django.http import JsonResponse
 from users.models import User 
+import json
 
 class UserAPIView(APIView):
     """
@@ -64,6 +67,7 @@ class UserAPIView(APIView):
         else:
             return JsonResponse({"error": "User Not Found"}, status=404)
 
+@method_decorator(csrf_exempt, name='dispatch')
 class LoginAPIView(APIView):
     """
     Handle user authentication.
@@ -73,32 +77,56 @@ class LoginAPIView(APIView):
         """
         Handle user login.
         """
-        user_name = request.data.get('username')
-        password = request.data.get('password')
-        
-        # Add input validation
-        if not user_name or not password:
-            return JsonResponse({'error': 'Username and password required'}, status=400)
-        
-        user = UserSerializer.authenticate(user_name, password)
-        if user:
-            return JsonResponse({
-                'success': True,
-                'message': 'Login successful',
-                'data': {
-                    'user_id': user.id,
-                    'username': user.username,
-                    'user_type': user.user_type,
-                    'email': user.email,
-                    'first_name': user.first_name,
-                    'last_name': user.last_name
-                }
-            }, status=200)
-        else:
+        try:
+            # Parse JSON data
+            if hasattr(request, 'data'):
+                email = request.data.get('email')
+                password = request.data.get('password')
+            else:
+                data = json.loads(request.body.decode('utf-8'))
+                email = data.get('email')
+                password = data.get('password')
+            
+            print(f"Login attempt with email: {email}")
+            
+            if not email or not password:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Email and password required'
+                }, status=400)
+            
+            user = UserSerializer.authenticate(email, password)
+            if user:
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Login successful',
+                    'data': {
+                        'user_id': user.id,
+                        'username': user.username,
+                        'user_type': user.user_type,
+                        'email': user.email,
+                        'first_name': user.first_name,
+                        'last_name': user.last_name,
+                        'role': user.user_type
+                    }
+                }, status=200)
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Invalid email or password'
+                }, status=401)
+                
+        except json.JSONDecodeError:
             return JsonResponse({
                 'success': False,
-                'error': 'Invalid username or password'
-            }, status=401)
+                'error': 'Invalid JSON data'
+            }, status=400)
+        except Exception as e:
+            print(f"Login error: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'error': 'Internal server error'
+            }, status=500)
 
 class UserListAPIView(APIView):
     """

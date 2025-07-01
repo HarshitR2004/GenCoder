@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.11",
+    "monaco-editor": "^0.52.2",
+    "tailwindcss": "^4.1.11"
+  }
+}

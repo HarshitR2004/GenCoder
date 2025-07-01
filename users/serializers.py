@@ -49,10 +49,12 @@ class UserSerializer(serializers.ModelSerializer):
             return False
     
     @staticmethod
-    def authenticate(username, password):
+    def authenticate(email, password):
         try:
-            user = User.objects.get(username=username)
+            user = User.objects.get(email=email)
+            print(f"Authenticating user: {user.email}")
             if user.check_password(password):
+                print(f"User {user.username} authenticated successfully")
                 return user
             return None
         except User.DoesNotExist:

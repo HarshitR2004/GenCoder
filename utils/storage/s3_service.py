@@ -19,27 +19,8 @@ class S3Service:
                 endpoint_url=settings.AWS_S3_ENDPOINT_URL
             )
             self.bucket_name = settings.AWS_STORAGE_BUCKET_NAME
-            self.s3_client.create_bucket(
-                Bucket=self.bucket_name,
-            )
-            self.ensure_bucket_exists()
         except Exception as e:
             raise Exception(f"Failed to initialize S3 client: {str(e)}")
-        
-        
-    def ensure_bucket_exists(self):
-        """
-        Ensure the S3 bucket exists, creating it if necessary.
-        """
-        try:
-            self.s3_client.head_bucket(Bucket=self.bucket_name)
-            print(f"Bucket {self.bucket_name} exists.")
-        except self.s3_client.exceptions.NoSuchBucket:
-            self.s3_client.create_bucket(Bucket=self.bucket_name)
-        except Exception as e:
-            return Response(
-                {"error": "Failed to ensure bucket exists", "details": str(e)},
-                status=500)
     
     def upload_question_file(self, uploaded_file, question_id):
         """
@@ -94,6 +75,27 @@ class S3Service:
                 return JsonResponse(
                     {"error": "Question not found"},
                     status=404)
+                
+    def get_questions(self):
+        """ Retrieve a list of all questions stored.
+        
+        """
+        try:
+            response = self.s3_client.list_objects_v2(
+                Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+                Prefix='questions/'
+            )
+            questions = []
+            if 'Contents' in response:
+                for obj in response['Contents']:
+                    if obj['Key'].endswith('question.md'):
+                        question_id = obj['Key'].split('/')[1].replace('question_', '')
+                        questions.append(question_id)
+            return questions
+        except Exception as e:
+            return JsonResponse(
+                {"error": "Failed to retrieve questions", "details": str(e)},
+                status=500)
 
     def upload_input(self, question_id, case_id, input_data):
         """
@@ -136,5 +138,5 @@ class S3Service:
 
 
 
-    
-    
+
+
