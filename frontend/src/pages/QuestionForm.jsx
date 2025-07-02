@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { Save, X, FileText, Eye, EyeOff, Download, Plus, Trash2, Tag, Code, Copy, Check, RotateCcw } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
@@ -22,9 +22,7 @@ const QuestionForm = () => {
   // ROUTING AND AUTHENTICATION SETUP
   // =============================================
   const navigate = useNavigate()
-  const { id } = useParams()
   const { user } = useAuth()
-  const isEditing = Boolean(id)
 
   // =============================================
   // FORM STATE MANAGEMENT
@@ -75,7 +73,6 @@ const QuestionForm = () => {
       python: 'python',
       java: 'java',
       cpp: 'cpp',
-      
     }
     return languageMap[language] || 'plaintext'
   }
@@ -92,15 +89,10 @@ const QuestionForm = () => {
     
     // Load necessary data for form
     fetchLanguagesAndTopics()
-    
-    // If editing, load existing question data
-    if (isEditing) {
-      fetchQuestion()
-    }
-  }, [id, user, navigate, isEditing])
+  }, [user, navigate])
 
   // =============================================
-  // API CALLS - FETCH LANGUAGES AND TOPICS
+  // API CALLS - FETCH TOPICS
   // =============================================
   const fetchLanguagesAndTopics = async () => {
     try {
@@ -212,55 +204,8 @@ int main() {
 
 // Test your solution
 console.log(solution());`
-
     }
     return templates[language] || '// Write your code here'
-  }
-
-  // =============================================
-  // API CALLS - FETCH EXISTING QUESTION DATA FOR EDITING
-  // =============================================
-  const fetchQuestion = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch(`/api/questions/${id}/`)
-      
-      if (response.ok) {
-        const data = await response.json()
-        
-        // Initialize starter code if not present
-        const existingStarterCode = data.starter_code || {}
-        const completeStarterCode = {}
-        languages.forEach(lang => {
-          completeStarterCode[lang.name] = existingStarterCode[lang.name] || getDefaultStarterCode(lang.name)
-        })
-        
-        setFormData({
-          title: data.title || '',
-          difficulty: data.difficulty || 'easy',
-          markdown_content: data.question_content || data.markdown_content || '',
-          test_cases: data.test_cases || [
-            {
-              input_content: '',
-              output_content: '',
-              is_example: true,
-              is_hidden: false
-            }
-          ],
-          // Keep all languages selected even when editing
-          language_ids: languages.map(lang => lang.id),
-          topic_ids: data.topics?.map(topic => topic.id) || [],
-          starter_code: completeStarterCode
-        })
-      } else {
-        setError('Failed to fetch question data')
-      }
-    } catch (error) {
-      console.error('Error fetching question:', error)
-      setError('Failed to fetch question data')
-    } finally {
-      setLoading(false)
-    }
   }
 
   // =============================================
@@ -389,16 +334,9 @@ console.log(solution());`
     }
 
     try {
-      // Determine API endpoint and method based on editing state
-      const url = isEditing 
-        ? `/api/questions/${id}/`
-        : '/api/questions/create/'
-      
-      const method = isEditing ? 'PUT' : 'POST'
-
-      // Submit form data to API
-      const response = await fetch(url, {
-        method,
+      // Submit form data to API for creation only
+      const response = await fetch('/api/questions/', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -407,35 +345,24 @@ console.log(solution());`
 
       if (response.ok) {
         const data = await response.json()
-        if (data.success || response.status === 200 || response.status === 201) {
-          setSuccess(`Question ${isEditing ? 'updated' : 'created'} successfully!`)
+        if (data.success || response.status === 201) {
+          setSuccess('Question created successfully!')
           setTimeout(() => {
             navigate('/questions')
           }, 1500)
         } else {
-          setError(data.error || 'Failed to save question')
+          setError(data.error || 'Failed to create question')
         }
       } else {
         const errorData = await response.json()
-        setError(errorData.error || `Failed to ${isEditing ? 'update' : 'create'} question`)
+        setError(errorData.error || 'Failed to create question')
       }
     } catch (error) {
-      console.error('Error saving question:', error)
-      setError(`Failed to ${isEditing ? 'update' : 'create'} question`)
+      console.error('Error creating question:', error)
+      setError('Failed to create question')
     } finally {
       setLoading(false)
     }
-  }
-
-  // =============================================
-  // LOADING STATE COMPONENT
-  // =============================================
-  if (loading && isEditing) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-base-100">
-        <LoadingSpinner size="lg" text="Loading question..." />
-      </div>
-    )
   }
 
   // =============================================
@@ -454,10 +381,10 @@ console.log(solution());`
               <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                 <div>
                   <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">
-                    {isEditing ? 'Edit Question' : 'Create New Question'}
+                    Create New Question
                   </h1>
                   <p className="text-base-content/70 text-lg">
-                    {isEditing ? 'Update your coding challenge' : 'Design an engaging coding challenge'}
+                    Design an engaging coding challenge
                   </p>
                   <p className="text-sm text-base-content/50 mt-2">
                     Questions are automatically available in all programming languages
@@ -892,6 +819,21 @@ Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].
                       </div>
                     </div>
 
+                    {/* Test Case Configuration Options */}
+                    <div className="flex flex-wrap gap-6">
+                      {/* Hidden Test Case Checkbox */}
+                      <label className="cursor-pointer flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={testCase.is_hidden}
+                          onChange={(e) => handleTestCaseChange(index, 'is_hidden', e.target.checked)}
+                          className="checkbox checkbox-secondary"
+                        />
+                        <span className="label-text font-medium">
+                          Hidden test case
+                        </span>
+                      </label>
+                    </div>
                   </div>
                 ))}
               </CardContent>
@@ -906,7 +848,7 @@ Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].
                   {/* Form Submission Information */}
                   <div className="text-center md:text-left">
                     <p className="text-base-content/70">
-                      Ready to {isEditing ? 'update' : 'publish'} your question?
+                      Ready to publish your question?
                     </p>
                     <p className="text-sm text-base-content/50">
                       Make sure all required fields are filled out correctly.
@@ -937,7 +879,7 @@ Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].
                       className="min-w-[200px]"
                       icon={!loading && <Save size={20} />}
                     >
-                      {isEditing ? 'Update Question' : 'Create Question'}
+                      Create Question
                     </Button>
                   </div>
                 </div>

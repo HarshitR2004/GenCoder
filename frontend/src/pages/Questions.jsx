@@ -31,7 +31,7 @@ const Questions = () => {
     try {
       setLoading(true)
       // Updated URL to match your backend endpoint
-      const response = await fetch(`/api/questions/list/?page=${page}`, {
+      const response = await fetch(`/api/questions/?page=${page}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

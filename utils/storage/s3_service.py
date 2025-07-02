@@ -22,7 +22,7 @@ class S3Service:
         except Exception as e:
             raise Exception(f"Failed to initialize S3 client: {str(e)}")
     
-    def upload_question_file(self, uploaded_file, question_id):
+    def upload_question_file(self, markdown_content, question_id):
         """
         Upload a markdown file to S3.
         :param file_path: Local path to the markdown file.
@@ -34,7 +34,7 @@ class S3Service:
             self.s3_client.put_object(
                 Bucket=self.bucket_name,
                 Key=key,
-                Body=uploaded_file.read(),
+                Body=markdown_content,
                 ContentType='text/markdown'
             )
             return Response({"message": "File uploaded successfully"}, status=200)
@@ -55,6 +55,7 @@ class S3Service:
                     Body=question_content,
                     ContentType='text/markdown'
             )
+            return key
         except Exception as e:
             return JsonResponse(    
                 {"error": "Failed to upload question", "details": str(e)},
@@ -108,6 +109,7 @@ class S3Service:
                 Key=key,
                 Body=input_data
             )
+            return key
         except Exception as e:
             return JsonResponse(
                 {"error": "Failed to upload input", "details": str(e)},
@@ -124,11 +126,29 @@ class S3Service:
                 Key=key,
                 Body=output_data
             )
+            return key
         except Exception as e:
             return JsonResponse(
                 {"error": "Failed to upload output", "details": str(e)},
                 status=500)
-
+            
+    def upload_starter_code(self, question_id, language, code_content):
+            """
+        Upload starter code for a specific question and language.
+            """
+            key = f"questions/question_{question_id}/starter_code/{language}.txt"
+            try:
+                self.s3_client.put_object(
+                    Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+                    Key=key,
+                    Body=code_content,
+                    ContentType='text/plain'
+                )
+                return key
+            except Exception as e:
+                return Response(
+                    {"error": "Failed to upload starter code", "details": str(e)},
+                    status=500)
 
 
 
