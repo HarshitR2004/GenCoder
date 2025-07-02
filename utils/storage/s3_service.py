@@ -21,27 +21,6 @@ class S3Service:
             self.bucket_name = settings.AWS_STORAGE_BUCKET_NAME
         except Exception as e:
             raise Exception(f"Failed to initialize S3 client: {str(e)}")
-    
-    def upload_question_file(self, markdown_content, question_id):
-        """
-        Upload a markdown file to S3.
-        :param file_path: Local path to the markdown file.
-        :param question_id: ID of the question to associate with the file.
-        """
-           
-        key = f"questions/question_{question_id}/question.md"
-        try:
-            self.s3_client.put_object(
-                Bucket=self.bucket_name,
-                Key=key,
-                Body=markdown_content,
-                ContentType='text/markdown'
-            )
-            return Response({"message": "File uploaded successfully"}, status=200)
-        except Exception as e:
-            return Response(
-                {"error": "Failed to upload file", "details": str(e)},
-                status=500)
       
     def upload_question(self, question_id, question_content):
         """
@@ -76,27 +55,7 @@ class S3Service:
                 return JsonResponse(
                     {"error": "Question not found"},
                     status=404)
-                
-    def get_questions(self):
-        """ Retrieve a list of all questions stored.
         
-        """
-        try:
-            response = self.s3_client.list_objects_v2(
-                Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-                Prefix='questions/'
-            )
-            questions = []
-            if 'Contents' in response:
-                for obj in response['Contents']:
-                    if obj['Key'].endswith('question.md'):
-                        question_id = obj['Key'].split('/')[1].replace('question_', '')
-                        questions.append(question_id)
-            return questions
-        except Exception as e:
-            return JsonResponse(
-                {"error": "Failed to retrieve questions", "details": str(e)},
-                status=500)
 
     def upload_input(self, question_id, case_id, input_data):
         """
@@ -150,9 +109,46 @@ class S3Service:
                     {"error": "Failed to upload starter code", "details": str(e)},
                     status=500)
 
+    def get_starter_code(self, question_id, language):
+        """
+        Retrieve the starter code for a specific question and language.
+        """
+        key = f"questions/question_{question_id}/starter_code/{language}.txt"
+        try:
+            response = self.s3_client.get_object(
+                Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+                Key=key
+            )
+            return response['Body'].read().decode('utf-8')
+        except self.s3_client.exceptions.NoSuchKey:
+            return JsonResponse(
+                {"error": "Starter code not found"},
+                status=404)
 
-
-
+    def get_input_and_output(self, question_id, case_id):
+        """
+        Retrieve input and output for a specific test case.
+        """
+        input_key = f"questions/question_{question_id}/testcases/case_{case_id}/input.txt"
+        output_key = f"questions/question_{question_id}/testcases/case_{case_id}/output.txt"
+        
+        try:
+            input_response = self.s3_client.get_object(
+                Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+                Key=input_key
+            )
+            output_response = self.s3_client.get_object(
+                Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+                Key=output_key
+            )
+            return {
+                "input": input_response['Body'].read().decode('utf-8'),
+                "output": output_response['Body'].read().decode('utf-8')
+            }
+        except self.s3_client.exceptions.NoSuchKey:
+            return JsonResponse(
+                {"error": "Input or output not found"},
+                status=404)
 
 
 

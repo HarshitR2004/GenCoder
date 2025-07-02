@@ -34,15 +34,13 @@ class QuestionAPIView(APIView):
             try:
                 question = Question.objects.get(id=question_id)
                 
-                # Get test cases
                 test_cases = TestCase.objects.filter(question=question)
                 
-                # Prepare response data
                 question_data = QuestionSerializer(question).data
                 
-                # Add test cases data
                 question_data['test_cases'] = []
                 for test_case in test_cases:
+ 
                     question_data['test_cases'].append({
                         'id': test_case.id,
                         'input_content': test_case.input_content if hasattr(test_case, 'input_content') else '',
@@ -57,7 +55,7 @@ class QuestionAPIView(APIView):
                 for code in codes:
                     # Here you would retrieve the actual code from S3
                     # For now, we'll use a placeholder
-                    question_data['starter_code'][code.language.name] = f"# Starter code for {code.language.name}"
+                    question_data['starter_code'] = self._get_starter_code(question.id)
                 
                 # Add languages and topics
                 question_data['languages'] = LanguageSerializer(question.languages.all(), many=True).data
@@ -172,6 +170,7 @@ class QuestionAPIView(APIView):
                 continue
 
     def _create_starter_code(self, question, starter_code_data):
+        
         languages = Language.objects.all()
         
         for language in languages:
@@ -187,7 +186,20 @@ class QuestionAPIView(APIView):
                     )
                 except Exception as e:
                     raise Exception(f"Failed to upload starter code for {language.name}: {str(e)}")
-                    
+                
+    def _get_starter_code(self, question_id):
+        """
+        Retrieve the starter code for a specific question and language.
+        """
+        languages = Language.objects.all()
+        starter_code = {}
+        try:
+            for language in languages:
+                starter_code[language.name] = s3.get_starter_code(question_id, language.name)
+            return starter_code
+        except Exception as e:
+            raise Exception(f"Failed to retrieve starter code: {str(e)}")
+        
 
     def delete(self, request, question_id):
         """
