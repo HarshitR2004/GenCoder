@@ -25,29 +25,13 @@ const QuestionCard = ({ question }) => {
           </Badge>
         </div>
         
-        <p className="text-base-content/80 mb-4 line-clamp-3">
-          {question.description || 'No description available'}
-        </p>
-
+        {/* Display topics as tags */}
         <div className="flex flex-wrap gap-2 mb-4">
-          {question.tags?.map((tag, index) => (
-            <Badge key={index} variant="outline" size="sm">
-              {tag}
+          {question.topics?.map((topic) => (
+            <Badge key={topic.id} variant="outline" size="sm">
+              {topic.name}
             </Badge>
-          )) || (
-            <Badge variant="outline" size="sm">General</Badge>
-          )}
-        </div>
-
-        <div className="flex items-center gap-4 text-sm text-base-content/60 mb-4">
-          <div className="flex items-center gap-1">
-            <Code size={16} />
-            <span>{question.language || 'Multiple'}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Clock size={16} />
-            <span>{question.time_limit || '2s'}</span>
-          </div>
+          ))}
         </div>
 
         <div className="card-actions justify-end">

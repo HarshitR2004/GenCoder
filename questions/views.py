@@ -53,8 +53,9 @@ class QuestionAPIView(APIView):
                     
                     question_data['test_cases'].append(test_case_data)
                 
-                # Add starter code data - fix the loop issue
+                
                 question_data['starter_code'] = self._get_starter_code(question.id)
+                question_data['description'] = self._get_description(question.id)
                 
                 # Add languages and topics
                 question_data['languages'] = LanguageSerializer(question.languages.all(), many=True).data
@@ -164,10 +165,18 @@ class QuestionAPIView(APIView):
                     is_example=test_case_data.get('is_example', False),
                     is_hidden=test_case_data.get('is_hidden', True)
                 )
-            except Exception as e:
-                # Skip test case creation on error 
+            except Exception:
+                
                 continue
-
+    def _get_description(self, question_id):
+        """
+        Retrieve the markdown description for a specific question.
+        """
+        try:
+            return s3.get_question(question_id)
+        except Exception as e:
+            raise Exception(f"Failed to retrieve question content: {str(e)}")
+    
     def _create_starter_code(self, question, starter_code_data):
         
         languages = Language.objects.all()

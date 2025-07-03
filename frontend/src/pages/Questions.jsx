@@ -71,8 +71,7 @@ const Questions = () => {
   }
 
   const filteredQuestions = questions.filter(question =>
-    question.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    question.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    question.title?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   if (loading) {
