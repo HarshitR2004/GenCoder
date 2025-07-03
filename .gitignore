@@ -47,7 +47,8 @@ coverage.xml
 
 # Node (if used for frontend)
 node_modules/
-
+package-lock.json
+package.json
 # Compiled frontend files (optional)
 build/
 dist/

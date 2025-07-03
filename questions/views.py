@@ -253,7 +253,7 @@ class LanguageListAPIView(APIView):
                 'success': True,
                 'results': serializer.data
             }, status=status.HTTP_200_OK)
-        except Exception as e:
+        except Exception:
             return Response({
                 'success': False,
                 'error': 'Failed to fetch languages'

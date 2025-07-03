@@ -22,7 +22,7 @@ const QuestionSolve = () => {
   
   // Language switching state
   const [selectedLanguage, setSelectedLanguage] = useState('python')
-  const [userCode, setUserCode] = useState({}) // Store user code for each language
+  const [userCode, setUserCode] = useState({})
 
   useEffect(() => {
     fetchQuestion()
