@@ -2,7 +2,6 @@ from rest_framework.views import APIView
 from utils.storage.s3_service import S3Service
 from .serializers import QuestionSerializer, LanguageSerializer, TopicSerializer
 from rest_framework.response import Response
-from django.core.files.uploadedfile import UploadedFile
 from .models import Question, Language, Topic, Code
 from rest_framework.pagination import PageNumberPagination
 from rest_framework import status
@@ -40,22 +39,22 @@ class QuestionAPIView(APIView):
                 
                 question_data['test_cases'] = []
                 for test_case in test_cases:
- 
-                    question_data['test_cases'].append({
+                    # Get input/output content from S3
+                    s3_content = s3.get_input_and_output(question.id, test_case.id)
+                    print(s3_content)
+                    
+                    test_case_data = {
                         'id': test_case.id,
-                        'input_content': test_case.input_content if hasattr(test_case, 'input_content') else '',
-                        'output_content': test_case.output_content if hasattr(test_case, 'output_content') else '',
+                        'input_content': s3_content.get('input', ''),
+                        'output_content': s3_content.get('output', ''),
                         'is_example': test_case.is_example,
                         'is_hidden': test_case.is_hidden
-                    })
+                    }
+                    
+                    question_data['test_cases'].append(test_case_data)
                 
-                # Add starter code data
-                codes = Code.objects.filter(question=question)
-                question_data['starter_code'] = {}
-                for code in codes:
-                    # Here you would retrieve the actual code from S3
-                    # For now, we'll use a placeholder
-                    question_data['starter_code'] = self._get_starter_code(question.id)
+                # Add starter code data - fix the loop issue
+                question_data['starter_code'] = self._get_starter_code(question.id)
                 
                 # Add languages and topics
                 question_data['languages'] = LanguageSerializer(question.languages.all(), many=True).data
@@ -81,7 +80,7 @@ class QuestionAPIView(APIView):
                 
                 serializer = QuestionSerializer(paginated_questions, many=True)
                 return paginator.get_paginated_response(serializer.data)
-            except Exception as e:
+            except Exception:
                 return Response({
                     'success': False,
                     'error': 'Failed to fetch questions'
@@ -208,7 +207,7 @@ class QuestionAPIView(APIView):
         try:
             question = Question.objects.get(id=question_id)
             
-            # Delete associated test cases (cascade should handle this)
+            # Delete associated test cases 
             TestCase.objects.filter(question=question).delete()
             
             # Delete associated starter code records

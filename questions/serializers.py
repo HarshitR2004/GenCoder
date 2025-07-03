@@ -23,7 +23,6 @@ class TopicSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         """Custom representation to ensure display name is included"""
         data = super().to_representation(instance)
-        # Override the topic field to show display name
         data['name'] = instance.get_topic_display()
         return data
 

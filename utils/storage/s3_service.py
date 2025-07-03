@@ -129,8 +129,8 @@ class S3Service:
         """
         Retrieve input and output for a specific test case.
         """
-        input_key = f"questions/question_{question_id}/testcases/case_{case_id}/input.txt"
-        output_key = f"questions/question_{question_id}/testcases/case_{case_id}/output.txt"
+        input_key = f"questions/question_{question_id}/testcases/case_case_{case_id}/input.txt"
+        output_key = f"questions/question_{question_id}/testcases/case_case_{case_id}/output.txt"
         
         try:
             input_response = self.s3_client.get_object(
@@ -146,9 +146,16 @@ class S3Service:
                 "output": output_response['Body'].read().decode('utf-8')
             }
         except self.s3_client.exceptions.NoSuchKey:
-            return JsonResponse(
-                {"error": "Input or output not found"},
-                status=404)
+            return {
+                "input": "",
+                "output": ""
+            }
+        except Exception:
+            # Return empty strings for any other errors
+            return {
+                "input": "",
+                "output": ""
+            }
 
 
 

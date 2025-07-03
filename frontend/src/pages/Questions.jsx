@@ -37,7 +37,7 @@ const Questions = () => {
           // Removed Authorization header since you're not using tokens
         }
       })
-
+      
       console.log('Questions response status:', response.status)
 
       if (!response.ok) {
