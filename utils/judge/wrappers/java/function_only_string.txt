@@ -1,0 +1,12 @@
+<USER_CODE>
+
+public class Main {
+    public static void main(String[] args) {
+        String name = args[0];
+
+        Solution sol = new Solution();
+        String result = sol.<FUNC_NAME>(name);
+
+        System.out.println(result);
+    }
+}

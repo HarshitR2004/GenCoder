@@ -1,0 +1,13 @@
+#include <iostream>
+#include <cstdlib>
+using namespace std;
+
+int <FUNC_NAME>(int a, int b);
+
+int main(int argc, char* argv[]) {
+    int a = atoi(argv[1]);
+    int b = atoi(argv[2]);
+
+    cout << <FUNC_NAME>(a, b) << endl;
+    return 0;
+}

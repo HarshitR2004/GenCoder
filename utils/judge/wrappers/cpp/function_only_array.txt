@@ -1,0 +1,25 @@
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include <string>
+#include <cstdlib>
+using namespace std;
+
+int <FUNC_NAME>(vector<int>& arr);
+
+vector<int> parseArray(const char* arg) {
+    vector<int> result;
+    stringstream ss(arg);
+    string token;
+    while (getline(ss, token, ',')) {
+        result.push_back(stoi(token));
+    }
+    return result;
+}
+
+int main(int argc, char* argv[]) {
+    vector<int> arr = parseArray(argv[1]);
+
+    cout << <FUNC_NAME>(arr) << endl;
+    return 0;
+}

@@ -138,8 +138,6 @@ const QuestionSolve = () => {
       python: 'Python',
       java: 'Java',
       cpp: 'C++',
-      javascript: 'JavaScript',
-      c: 'C'
     }
     return displayNames[language] || language.charAt(0).toUpperCase() + language.slice(1)
   }

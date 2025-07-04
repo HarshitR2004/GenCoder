@@ -1,0 +1,11 @@
+#include <iostream>
+#include <string>
+using namespace std;
+
+string <FUNC_NAME>(string name);
+
+int main(int argc, char* argv[]) {
+    string name = argv[1];
+    cout << <FUNC_NAME>(name) << endl;
+    return 0;
+}

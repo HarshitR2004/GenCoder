@@ -1,0 +1,7 @@
+import sys
+from solution import <FUNC_NAME>
+
+args = list(map(int, sys.argv[1:]))
+
+result = <FUNC_NAME>(*args)
+print(result)
