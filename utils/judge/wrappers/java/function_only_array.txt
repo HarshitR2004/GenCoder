@@ -9,7 +9,7 @@ public class Main {
         }
 
         Solution sol = new Solution();
-        int result = sol.<FUNC_NAME>(arr);
+        int result = sol.solution(arr);
 
         System.out.println(result);
     }

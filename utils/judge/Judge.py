@@ -26,35 +26,25 @@ class Judge:
         except Exception as e:
             raise Exception(f"An error occurred while loading the template: {str(e)}")
     
-    def inject_template(self, user_code, language, problem_type, function_name):
+    def inject_template(self, user_code, language, problem_type):
         """
         Inject the user code into the template.
         """
         template_code = self.load_template(language, problem_type)
-        final_code = template_code.replace("<USER_CODE>", user_code).replace("<FUNC_NAME>", function_name)
+        final_code = template_code.replace("<USER_CODE>", user_code)
         return final_code
     
-    @classmethod
     def execute_code(self, user_code, language, problem_type, args=[]):
         """
         Execute user code using the judge service.
         
-        Args:
-            user_code (str): The user's solution code
-            language (str): Programming language (python, java, cpp)
-            problem_type (str): Type of problem (function_only_int, function_only_string, function_only_array)
-            function_name (str): Name of the function to call
-            args (list): Arguments to pass to the function
-            
-        Returns:
-            dict: Execution result from the judge API
         """
         url = 'http://localhost:2000/api/v2/execute'
         
         if language not in self.VERSIONS:
             raise ValueError(f"Unsupported language: {language}")
         
-        wrapper_code = self.inject_template(user_code, language, problem_type, 'solution')
+        wrapper_code = self.inject_template(user_code, language, problem_type)
         
         files = []
         

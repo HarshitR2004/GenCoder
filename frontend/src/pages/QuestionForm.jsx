@@ -16,6 +16,8 @@ import Tabs from '../components/ui/Tabs'
 import Badge from '../components/ui/Badge'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import TopicSelector from '../components/form/TopicSelector'
+import StarterCodeSelector from '../components/form/StarterCodeSelector'
+import starterCodeService from '../services/StarterCodeService'
 
 const QuestionForm = () => {
   // =============================================
@@ -106,10 +108,10 @@ const QuestionForm = () => {
         // Automatically set all languages as selected by default
         const allLanguageIds = languageList.map(lang => lang.id)
         
-        // Initialize starter code for all languages
+        // Initialize empty starter code for all languages
         const initialStarterCode = {}
         languageList.forEach(lang => {
-          initialStarterCode[lang.name] = getDefaultStarterCode(lang.name)
+          initialStarterCode[lang.name] = ''
         })
         
         setFormData(prev => ({
@@ -134,78 +136,6 @@ const QuestionForm = () => {
       console.error('Error fetching languages/topics:', error)
       setError('Failed to load languages and topics')
     }
-  }
-
-  // =============================================
-  // DEFAULT STARTER CODE TEMPLATES
-  // =============================================
-  const getDefaultStarterCode = (language) => {
-    const templates = {
-      python: `def solution():
-    """
-    Write your solution here
-    
-    Returns:
-        Your result here
-    """
-    pass
-
-# Test your solution
-if __name__ == "__main__":
-    result = solution()
-    print(result)`,
-      java: `public class Solution {
-    /**
-     * Write your solution here
-     * 
-     * @return Your result here
-     */
-    public void solution() {
-        
-    }
-    
-    // Test your solution
-    public static void main(String[] args) {
-        Solution sol = new Solution();
-        sol.solution();
-    }
-}`,
-      cpp: `#include <iostream>
-#include <vector>
-#include <string>
-using namespace std;
-
-class Solution {
-public:
-    /**
-     * Write your solution here
-     * 
-     * @return Your result here
-     */
-    void solution() {
-        
-    }
-};
-
-// Test your solution
-int main() {
-    Solution sol;
-    sol.solution();
-    return 0;
-}`,
-      javascript: `function solution() {
-    /**
-     * Write your solution here
-     * 
-     * @return Your result here
-     */
-    
-}
-
-// Test your solution
-console.log(solution());`
-    }
-    return templates[language] || '// Write your code here'
   }
 
   // =============================================
@@ -256,8 +186,34 @@ console.log(solution());`
   }
 
   const resetStarterCode = (language) => {
-    const defaultCode = getDefaultStarterCode(language)
-    handleStarterCodeChange(language, defaultCode)
+    handleStarterCodeChange(language, '')
+  }
+
+  // =============================================
+  // STARTER CODE TEMPLATE SELECTION HANDLER
+  // =============================================
+  const handleStarterCodeSelection = async (selectedType) => {
+    // Apply the starter code template to ALL languages
+    const updatedStarterCode = {}
+    
+    for (const language of languages) {
+      try {
+        const starterCode = await starterCodeService.getStarterCode(language.name, selectedType)
+        updatedStarterCode[language.name] = starterCode
+      } catch (error) {
+        console.error(`Error loading starter code for ${language.name}:`, error)
+        updatedStarterCode[language.name] = `// Error loading template for ${language.name}`
+      }
+    }
+    
+    // Update all starter code at once
+    setFormData(prev => ({
+      ...prev,
+      starter_code: {
+        ...prev.starter_code,
+        ...updatedStarterCode
+      }
+    }))
   }
 
   // =============================================
@@ -648,6 +604,11 @@ Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].
               </CardHeader>
               
               <CardContent>
+                {/* Starter Code Template Selector */}
+                <StarterCodeSelector 
+                  onStarterCodeSelect={handleStarterCodeSelection}
+                />
+
                 {/* Language Tabs */}
                 <div className="tabs tabs-bordered mb-6 overflow-x-auto">
                   {languages.map((language) => (

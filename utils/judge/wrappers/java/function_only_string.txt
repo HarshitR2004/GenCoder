@@ -5,7 +5,7 @@ public class Main {
         String name = args[0];
 
         Solution sol = new Solution();
-        String result = sol.<FUNC_NAME>(name);
+        String result = sol.solution(name);
 
         System.out.println(result);
     }

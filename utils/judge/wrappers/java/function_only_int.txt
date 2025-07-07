@@ -6,7 +6,7 @@ public class Main {
         int b = Integer.parseInt(args[1]);
 
         Solution sol = new Solution();
-        int result = sol.<FUNC_NAME>(a, b);
+        int result = sol.solution(a, b);
 
         System.out.println(result);
     }

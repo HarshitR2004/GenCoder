@@ -2,10 +2,10 @@
 #include <string>
 using namespace std;
 
-string <FUNC_NAME>(string name);
+<USER_CODE>
 
 int main(int argc, char* argv[]) {
     string name = argv[1];
-    cout << <FUNC_NAME>(name) << endl;
+    cout << solution(name) << endl;
     return 0;
 }

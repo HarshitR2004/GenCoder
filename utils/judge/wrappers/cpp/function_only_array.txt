@@ -5,7 +5,7 @@
 #include <cstdlib>
 using namespace std;
 
-int <FUNC_NAME>(vector<int>& arr);
+<USER_CODE>
 
 vector<int> parseArray(const char* arg) {
     vector<int> result;
@@ -19,7 +19,6 @@ vector<int> parseArray(const char* arg) {
 
 int main(int argc, char* argv[]) {
     vector<int> arr = parseArray(argv[1]);
-
-    cout << <FUNC_NAME>(arr) << endl;
+    cout << solution(arr) << endl;
     return 0;
 }
