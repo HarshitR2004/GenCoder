@@ -74,6 +74,18 @@ const Questions = () => {
     question.title?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  const handleDeleteQuestion = (questionId) => {
+    // Remove the deleted question from the local state
+    setQuestions(prevQuestions => 
+      prevQuestions.filter(question => question.id !== questionId)
+    )
+    // Update pagination count
+    setPagination(prevPagination => ({
+      ...prevPagination,
+      count: prevPagination.count - 1
+    }))
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -129,7 +141,11 @@ const Questions = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredQuestions.map((question) => (
-          <QuestionCard key={question.id} question={question} />
+          <QuestionCard 
+            key={question.id} 
+            question={question} 
+            onDelete={handleDeleteQuestion}
+          />
         ))}
       </div>
 
