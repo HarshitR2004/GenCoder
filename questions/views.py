@@ -92,6 +92,7 @@ class QuestionAPIView(APIView):
         Handle POST requests to create a new question.
         """
         try:
+            
             # Validate and create question
             question_serializer = QuestionSerializer(data=request.data)
             if not question_serializer.is_valid():
@@ -214,17 +215,14 @@ class QuestionAPIView(APIView):
         Handle DELETE requests to delete a specific question.
         """
         try:
+            print(f"Deleting question with ID: {question_id}")
+            s3.delete_question(question_id)
+            
             question = Question.objects.get(id=question_id)
-            
-            # Delete associated test cases 
             TestCase.objects.filter(question=question).delete()
-            
-            # Delete associated starter code records
             Code.objects.filter(question=question).delete()
-            
-            # Delete the question itself
             question.delete()
-            
+                        
             return Response({
                 'success': True,
                 'message': 'Question deleted successfully'

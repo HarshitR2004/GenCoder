@@ -95,11 +95,10 @@ const QuestionSolve = () => {
   const handleSubmit = async () => {
     setSubmitting(true)
     try {
-      const response = await fetch(`/api/questions/${id}/submit`, {
+      const response = await fetch(`/api/judge/execute`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({ 
           code,
@@ -126,8 +125,7 @@ const QuestionSolve = () => {
       python: 'python',
       java: 'java',
       cpp: 'cpp',
-      javascript: 'javascript',
-      c: 'c'
+     
     }
     return languageMap[language] || 'plaintext'
   }

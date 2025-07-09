@@ -141,22 +141,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 USE_S3 = config('USE_S3', default=False, cast=bool)
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
-AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME')
+AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='gencoder')
 AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME')
-AWS_S3_ENDPOINT_URL = config('AWS_S3_ENDPOINT_URL')
-
-# S3 Bucket Organization
-S3_QUESTIONS_PREFIX = 'questions/'
-S3_TESTCASES_PREFIX = 'testcases/'
-SIGNED_URL_EXPIRATION = 3600
 
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Your Vite dev server
+    "http://localhost:5173", 
     "http://127.0.0.1:5173",
 ]
 
-# For development, you can also use this (less secure):
-# CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True

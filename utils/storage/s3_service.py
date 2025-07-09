@@ -1,7 +1,5 @@
 import boto3
 from gencoder import settings
-from django.http import JsonResponse
-from rest_framework.response import Response
 
 class S3Service:
     """
@@ -16,30 +14,26 @@ class S3Service:
                 aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
                 aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
                 region_name=settings.AWS_S3_REGION_NAME,
-                endpoint_url=settings.AWS_S3_ENDPOINT_URL
             )
             self.bucket_name = settings.AWS_STORAGE_BUCKET_NAME
         except Exception as e:
             raise Exception(f"Failed to initialize S3 client: {str(e)}")
+        
       
     def upload_question(self, question_id, question_content):
-        """
-        Upload the question markdown content as question.md inside
-            """
+        """Upload the question markdown content as question.md"""
         key = f"questions/question_{question_id}/question.md"
         try:
             self.s3_client.put_object(
-                    Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-                    Key=key,
-                    Body=question_content,
-                    ContentType='text/markdown'
+                Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+                Key=key,
+                Body=question_content,
+                ContentType='text/markdown'
             )
             return key
         except Exception as e:
-            return JsonResponse(    
-                {"error": "Failed to upload question", "details": str(e)},
-                status=500)
-            
+            raise Exception(f"Failed to upload question: {str(e)}")
+
     def get_question(self, question_id):
         """
         Retrieve the question markdown content from S3.
@@ -52,15 +46,10 @@ class S3Service:
             )
             return response['Body'].read().decode('utf-8')
         except self.s3_client.exceptions.NoSuchKey:
-                return JsonResponse(
-                    {"error": "Question not found"},
-                    status=404)
-        
+            raise Exception("Question not found")
 
     def upload_input(self, question_id, case_id, input_data):
-        """
-        Upload input.txt inside
-        """
+        """Upload input.txt"""
         key = f"questions/question_{question_id}/testcases/case_{case_id}/input.txt"
         try:
             self.s3_client.put_object(
@@ -70,14 +59,10 @@ class S3Service:
             )
             return key
         except Exception as e:
-            return JsonResponse(
-                {"error": "Failed to upload input", "details": str(e)},
-                status=500)
+            raise Exception(f"Failed to upload input: {str(e)}")
 
     def upload_output(self, question_id, case_id, output_data):
-        """
-        Upload output.txt inside
-        """
+        """Upload output.txt"""
         key = f"questions/question_{question_id}/testcases/case_{case_id}/output.txt"
         try:
             self.s3_client.put_object(
@@ -87,27 +72,21 @@ class S3Service:
             )
             return key
         except Exception as e:
-            return JsonResponse(
-                {"error": "Failed to upload output", "details": str(e)},
-                status=500)
+            raise Exception(f"Failed to upload output: {str(e)}")
             
     def upload_starter_code(self, question_id, language, code_content):
-            """
-        Upload starter code for a specific question and language.
-            """
-            key = f"questions/question_{question_id}/starter_code/{language}.txt"
-            try:
-                self.s3_client.put_object(
-                    Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-                    Key=key,
-                    Body=code_content,
-                    ContentType='text/plain'
-                )
-                return key
-            except Exception as e:
-                return Response(
-                    {"error": "Failed to upload starter code", "details": str(e)},
-                    status=500)
+        """Upload starter code for a specific question and language."""
+        key = f"questions/question_{question_id}/starter_code/{language}.txt"
+        try:
+            self.s3_client.put_object(
+                Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+                Key=key,
+                Body=code_content,
+                ContentType='text/plain'
+            )
+            return key
+        except Exception as e:
+            raise Exception(f"Failed to upload starter code: {str(e)}")
 
     def get_starter_code(self, question_id, language):
         """
@@ -121,9 +100,7 @@ class S3Service:
             )
             return response['Body'].read().decode('utf-8')
         except self.s3_client.exceptions.NoSuchKey:
-            return JsonResponse(
-                {"error": "Starter code not found"},
-                status=404)
+            raise Exception("Starter code not found")
 
     def get_input_and_output(self, question_id, case_id):
         """
@@ -131,7 +108,7 @@ class S3Service:
         """
         input_key = f"questions/question_{question_id}/testcases/case_case_{case_id}/input.txt"
         output_key = f"questions/question_{question_id}/testcases/case_case_{case_id}/output.txt"
-        
+                
         try:
             input_response = self.s3_client.get_object(
                 Bucket=settings.AWS_STORAGE_BUCKET_NAME,
@@ -145,21 +122,38 @@ class S3Service:
                 "input": input_response['Body'].read().decode('utf-8'),
                 "output": output_response['Body'].read().decode('utf-8')
             }
-        except self.s3_client.exceptions.NoSuchKey:
-            return {
-                "input": "",
-                "output": ""
-            }
-        except Exception:
-            # Return empty strings for any other errors
-            return {
-                "input": "",
-                "output": ""
-            }
+                  
+        except Exception as e:
+            raise Exception(f"Failed to retrieve input/output: {str(e)}")
+
+    def delete_question(self, question_id):
+        """Delete all files related to a specific question."""
+        prefix = f"questions/question_{question_id}/"
+        print(f"Deleting all objects with prefix: {prefix}")
+
+        try:
+            response = self.s3_client.list_objects_v2(
+                Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+                Prefix=prefix
+            )
+
+            if 'Contents' in response:
+                objects_to_delete = [{'Key': obj['Key']} for obj in response['Contents']]
+
+                delete_response = self.s3_client.delete_objects(
+                    Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+                    Delete={'Objects': objects_to_delete}
+                )
+                
+                return {"message": f"Successfully deleted {len(objects_to_delete)} objects"}
+            else:
+                raise Exception("No objects found to delete")
+        except self.s3_client.exceptions.NoSuchBucket:
+            raise Exception("Bucket does not exist")
+
+        except Exception as e:
+            raise Exception(f"Failed to delete question from S3: {str(e)}")
 
 
 
-
-
-
-
+    
