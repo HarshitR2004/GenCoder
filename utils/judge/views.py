@@ -10,7 +10,7 @@ if __name__ == "__main__":
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from utils.judge import Judge
+from .Judge import Judge
 from utils.storage.s3_service import S3Service
 from testcase.models import TestCase
 
@@ -27,7 +27,6 @@ class ExecuteCodeAPIView(APIView):
         Execute user code with the judge service.
         """
         try:
-            
             submission_results = {"correct": [], "incorrect": []}
             
             # Extract data from request
@@ -44,9 +43,7 @@ class ExecuteCodeAPIView(APIView):
             inputs = input_output_pairs['input']
             outputs = input_output_pairs['output']
             
-            
-            for i in range(len(input)):
-                
+            for i in range(len(inputs)):
                 result = judge.execute_code(
                         user_code=user_code,
                         language=language,
@@ -54,7 +51,10 @@ class ExecuteCodeAPIView(APIView):
                         args=inputs[i],
                 )
                 
-                if result['run']['output'].strip() == outputs[i]:
+                actual_output = result['run']['output'].strip()
+                expected_output = outputs[i]
+                
+                if actual_output == expected_output:
                     submission_results['correct'].append({
                         'test_case_id': i + 1,
                         'output': result['run']['output'],
@@ -62,14 +62,13 @@ class ExecuteCodeAPIView(APIView):
                 })
                     
                 else:
-                    
                     submission_results['incorrect'].append({
                         'test_case_id': i + 1,
                         'output': result['run']['output'],
                         'expected_output': outputs[i],
                         'status': 'incorrect'
                     })
-                
+            
             return Response({
                 'success': True,
                 'submission_results': submission_results
@@ -99,5 +98,4 @@ class ExecuteCodeAPIView(APIView):
             input_output_pairs["output"].append(response['output'])
             
         return input_output_pairs
-            
-    
+

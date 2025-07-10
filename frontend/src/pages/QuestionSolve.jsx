@@ -10,6 +10,8 @@ import Button from '../components/ui/Button'
 import Badge from '../components/ui/Badge'
 import Alert from '../components/ui/Alert'
 import Select from '../components/ui/Select'
+import TestResults from '../components/TestResults'
+import ErrorBoundary from '../components/ErrorBoundary'
 
 const QuestionSolve = () => {
   const { id } = useParams()
@@ -17,7 +19,7 @@ const QuestionSolve = () => {
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [results, setResults] = useState(null)
+  const [submissionResults, setSubmissionResults] = useState(null)
   const [error, setError] = useState('')
   
   // Language switching state
@@ -94,25 +96,47 @@ const QuestionSolve = () => {
 
   const handleSubmit = async () => {
     setSubmitting(true)
+    setError('')
+    setSubmissionResults(null)
+    
     try {
+      // Determine problem type based on available information
+      // For now, we'll default to 'function_only_int' but this could be made configurable
+      const problemType = question?.problem_type || 'function_only_int'
+      
+      const requestPayload = {
+        question_id: id,
+        user_code: code,
+        language: selectedLanguage,
+        problem_type: problemType
+      }
+      
+      console.log('Submitting code execution request:', requestPayload)
+      
       const response = await fetch(`/api/judge/execute`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          code,
-          language: selectedLanguage 
-        })
+        body: JSON.stringify(requestPayload)
       })
 
       if (!response.ok) {
-        throw new Error('Submission failed')
+        const errorData = await response.json()
+        console.error('Code execution failed:', errorData)
+        throw new Error(errorData.error || 'Submission failed')
       }
 
       const data = await response.json()
-      setResults(data)
+      console.log('Code execution response:', data)
+      
+      if (data.success) {
+        setSubmissionResults(data.submission_results)
+      } else {
+        throw new Error(data.error || 'Submission failed')
+      }
     } catch (err) {
+      console.error('Error during code execution:', err)
       setError(err.message)
     } finally {
       setSubmitting(false)
@@ -173,70 +197,78 @@ const QuestionSolve = () => {
   const availableLanguages = question?.starter_code ? Object.keys(question.starter_code) : []
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-base-200 to-base-100">
-      <div className="h-screen flex flex-col">
-        <div className="flex-1 flex">
-          {/* Left Panel - Question Details */}
-          <div className="w-1/2 border-r border-base-300 overflow-y-auto bg-base-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      {/* Header Bar */}
+      <div className="sticky top-0 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                {question?.title || 'Loading...'}
+              </h1>
+              <Badge variant={getDifficultyColor(question?.difficulty)} size="lg" className="shadow-sm">
+                {question?.difficulty?.toUpperCase() || 'MEDIUM'}
+              </Badge>
+            </div>
+            
+            {/* Topics */}
+            {question?.topics && question.topics.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {question.topics.slice(0, 3).map((topic) => (
+                  <Badge key={topic.id} variant="outline" size="sm" className="bg-white/50 dark:bg-slate-800/50">
+                    {topic.name}
+                  </Badge>
+                ))}
+                {question.topics.length > 3 && (
+                  <Badge variant="outline" size="sm" className="bg-white/50 dark:bg-slate-800/50">
+                    +{question.topics.length - 3}
+                  </Badge>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex h-[calc(100vh-80px)]">
+        {/* Left Panel - Problem Statement */}
+        <div className="w-2/5 flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700">
+          <div className="flex-1 overflow-y-auto">
             <div className="p-6">
-              {/* Question Header */}
-              <Card className="mb-6">
-                <CardContent>
-                  <div className="flex items-center justify-between mb-4">
-                    <h1 className="text-3xl font-bold text-primary">{question?.title}</h1>
-                    <Badge variant={getDifficultyColor(question?.difficulty)} size="lg">
-                      {question?.difficulty?.toUpperCase() || 'MEDIUM'}
-                    </Badge>
-                  </div>
-
-                  {/* Topics */}
-                  {question?.topics && question.topics.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {question.topics.map((topic) => (
-                        <Badge key={topic.id} variant="outline" size="sm">
-                          {topic.name}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Problem Statement */}
-              <Card className="mb-6">
-                <CardHeader gradient="bg-gradient-to-r from-secondary/10 to-accent/10">
-                  <CardTitle>Problem Statement</CardTitle>
+              {/* Problem Statement Card */}
+              <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <div className="w-2 h-6 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+                    Problem Statement
+                  </CardTitle>
                 </CardHeader>
-
-                <CardContent>
-                  {/* Rendered Markdown View */}
-                  <div className="prose prose-sm max-w-none">
+                <CardContent className="pt-0">
+                  <div className="prose prose-slate dark:prose-invert prose-sm max-w-none">
                     <ReactMarkdown
                       components={{
-                        // Custom code block styling (same as QuestionForm)
                         code({node, inline, className, children, ...props}) {
                           return inline ? (
-                            <code className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
+                            <code className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-sm font-mono border" {...props}>
                               {children}
                             </code>
                           ) : (
-                            <pre className="bg-base-300 p-4 rounded-lg overflow-x-auto border">
-                              <code className="font-mono text-sm" {...props}>{children}</code>
+                            <pre className="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl overflow-x-auto border border-slate-200 dark:border-slate-700 shadow-sm">
+                              <code className="font-mono text-sm text-slate-800 dark:text-slate-200" {...props}>{children}</code>
                             </pre>
                           )
                         },
-                        // Custom blockquote styling (same as QuestionForm)
                         blockquote({children}) {
                           return (
-                            <blockquote className="border-l-4 border-primary pl-4 italic bg-primary/5 py-3 rounded-r-lg">
+                            <blockquote className="border-l-4 border-blue-500 pl-4 italic bg-blue-50 dark:bg-blue-900/20 py-3 rounded-r-lg my-4">
                               {children}
                             </blockquote>
                           )
                         },
-                        // Custom heading styling (same as QuestionForm)
-                        h1: ({children}) => <h1 className="text-2xl font-bold text-primary mb-4">{children}</h1>,
-                        h2: ({children}) => <h2 className="text-xl font-bold text-secondary mb-3">{children}</h2>,
-                        h3: ({children}) => <h3 className="text-lg font-semibold mb-2">{children}</h3>
+                        h1: ({children}) => <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">{children}</h1>,
+                        h2: ({children}) => <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3">{children}</h2>,
+                        h3: ({children}) => <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">{children}</h3>
                       }}
                     >
                       {question?.description || '# No Problem Description\n\nNo problem description is available for this question.'}
@@ -246,110 +278,124 @@ const QuestionSolve = () => {
               </Card>
             </div>
           </div>
+        </div>
 
-          {/* Right Panel - Code Editor */}
-          <div className="w-1/2 flex flex-col bg-base-100">
-            {/* Code Editor Header with Language Selector */}
-            <Card className="rounded-none border-0 border-b border-base-300">
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <h2 className="text-lg font-semibold flex items-center gap-2">
-                      <Code size={20} />
-                      Code Editor
-                    </h2>
-                    
-                    {/* Language Selector */}
-                    {availableLanguages.length > 0 && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium"></span>
-                        <Select
-                          value={selectedLanguage}
-                          onChange={(e) => handleLanguageChange(e.target.value)}
-                          size="sm"
-                          className="min-w-[120px]"
-                          options={availableLanguages.map(lang => ({
-                            value: lang,
-                            label: getLanguageDisplayName(lang)
-                          }))}
-                        />
-                      </div>
-                    )}
+        {/* Right Panel - Code Editor & Results */}
+        <div className="w-3/5 flex flex-col bg-slate-50 dark:bg-slate-800">
+          {/* Code Editor Section */}
+          <div className="flex-1 flex flex-col">
+            {/* Editor Header */}
+            <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-6 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full"></div>
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Code Editor</h2>
                   </div>
                   
-                  <Button 
-                    onClick={handleSubmit}
-                    disabled={submitting}
-                    variant="primary"
-                    size="sm"
-                    loading={submitting}
-                    icon={!submitting && <Play size={16} />}
-                  >
-                    {submitting ? 'Running...' : 'Run Code'}
-                  </Button>
+                  {/* Language Selector */}
+                  {availableLanguages.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={selectedLanguage}
+                        onChange={(e) => handleLanguageChange(e.target.value)}
+                        size="sm"
+                        className="min-w-[120px] bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600"
+                        options={availableLanguages.map(lang => ({
+                          value: lang,
+                          label: getLanguageDisplayName(lang)
+                        }))}
+                      />
+                    </div>
+                  )}
                 </div>
-
-              
-              </CardContent>
-            </Card>
+                
+                <Button 
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  variant="primary"
+                  size="md"
+                  loading={submitting}
+                  icon={!submitting && <Play size={18} />}
+                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-lg"
+                >
+                  {submitting ? 'Running Tests...' : 'Run Code'}
+                </Button>
+              </div>
+            </div>
 
             {/* Monaco Editor */}
-            <div className="flex-1 border-b border-base-300">
-              <Editor
-                height="100%"
-                language={getMonacoLanguage(selectedLanguage)}
-                value={code}
-                onChange={handleCodeChange}
-                theme="vs-dark"
-                options={{
-                  fontSize: 20,
-                  lineNumbers: 'on',
-                  automaticLayout: true,
-                  tabSize: selectedLanguage === 'python' ? 4 : 2,
-                  insertSpaces: true,
-                  wordWrap: 'on',
-                  minimap: { enabled: false },
-                  scrollBeyondLastLine: false,
+            <div className="flex-1 relative">
+              <div className="absolute inset-0 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 m-4 shadow-lg">
+                <Editor
+                  height="100%"
+                  language={getMonacoLanguage(selectedLanguage)}
+                  value={code}
+                  onChange={handleCodeChange}
+                  theme="vs-dark"
+                  options={{
+                    fontSize: 16,
+                    lineNumbers: 'on',
+                    automaticLayout: true,
+                    tabSize: selectedLanguage === 'python' ? 4 : 2,
+                    insertSpaces: true,
+                    wordWrap: 'on',
+                    minimap: { enabled: false },
+                    scrollBeyondLastLine: false,
+                    padding: { top: 16, bottom: 16 },
+                    lineHeight: 24,
+                    fontFamily: "'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace",
+                    cursorBlinking: 'smooth',
+                    smoothScrolling: true,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Results Section */}
+          <div className="h-80 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+            <div className="h-full flex flex-col">
+              {/* Results Header */}
+              <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></div>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Test Results</h3>
+                  {submissionResults && (
+                    <Badge 
+                      variant={submissionResults.correct?.length === (submissionResults.correct?.length + submissionResults.incorrect?.length) ? 'success' : 'warning'} 
+                      size="sm"
+                      className="ml-2"
+                    >
+                      {submissionResults.correct?.length || 0} / {(submissionResults.correct?.length || 0) + (submissionResults.incorrect?.length || 0)} Passed
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Results Content */}
+              <div className="flex-1 overflow-hidden">
+                <TestResults 
+                  submissionResults={submissionResults}
+                  isLoading={submitting}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Error Display */}
+          {error && (
+            <div className="absolute bottom-4 right-4 max-w-md z-20">
+              <ErrorBoundary 
+                error={error}
+                isJudgeError={true}
+                retry={() => {
+                  setError('')
+                  handleSubmit()
                 }}
               />
             </div>
-
-            {/* Test Results Panel */}
-            {results && (
-              <Card className="rounded-none border-0 max-h-64 overflow-y-auto">
-                <CardHeader gradient="bg-gradient-to-r from-accent/10 to-warning/10">
-                  <CardTitle>Test Results</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {results.testCases?.map((result, index) => (
-                    <div key={index} className={`flex items-center gap-3 p-3 rounded-lg mb-2 ${
-                      result.passed ? 'bg-success/20 text-success' : 'bg-error/20 text-error'
-                    }`}>
-                      {result.passed ? <Check size={16} /> : <X size={16} />}
-                      <span className="font-mono text-sm">
-                        Test Case {index + 1}: {result.passed ? 'Passed' : 'Failed'}
-                      </span>
-                      {!result.passed && result.error && (
-                        <span className="text-sm opacity-75">- {result.error}</span>
-                      )}
-                    </div>
-                  ))}
-                  
-                  {results.summary && (
-                    <div className="mt-4 p-3 bg-base-200 rounded-lg">
-                      <div className="font-semibold mb-2">Summary</div>
-                      <div className="text-sm">
-                        Passed: {results.summary.passed}/{results.summary.total} test cases
-                      </div>
-                      {results.summary.runtime && (
-                        <div className="text-sm">Runtime: {results.summary.runtime}ms</div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </div>

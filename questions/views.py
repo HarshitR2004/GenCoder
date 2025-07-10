@@ -38,29 +38,46 @@ class QuestionAPIView(APIView):
                 question_data = QuestionSerializer(question).data
                 
                 question_data['test_cases'] = []
-                for test_case in test_cases:
-                    # Get input/output content from S3
-                    s3_content = s3.get_input_and_output(question.id, test_case.id)
-                    print(s3_content)
-                    
-                    test_case_data = {
-                        'id': test_case.id,
-                        'input_content': s3_content.get('input', ''),
-                        'output_content': s3_content.get('output', ''),
-                        'is_example': test_case.is_example,
-                        'is_hidden': test_case.is_hidden
-                    }
-                    
-                    question_data['test_cases'].append(test_case_data)
-                
-                
-                question_data['starter_code'] = self._get_starter_code(question.id)
-                question_data['description'] = self._get_description(question.id)
-                
+                for i, test_case in enumerate(test_cases):
+                    try:
+                        # Get input/output content from S3
+                        s3_content = s3.get_input_and_output(question.id, test_case.id)
+                        
+                        test_case_data = {
+                            'id': test_case.id,
+                            'input_content': s3_content.get('input', ''),
+                            'output_content': s3_content.get('output', ''),
+                            'is_example': test_case.is_example,
+                            'is_hidden': test_case.is_hidden
+                        }
+                        
+                        question_data['test_cases'].append(test_case_data)
+                        
+                    except Exception as e:
+                        # Add empty test case data to prevent frontend from breaking
+                        test_case_data = {
+                            'id': test_case.id,
+                            'input_content': '',
+                            'output_content': '',
+                            'is_example': test_case.is_example,
+                            'is_hidden': test_case.is_hidden
+                        }
+                        question_data['test_cases'].append(test_case_data)
+        
+                try:
+                    question_data['starter_code'] = self._get_starter_code(question.id)
+                except Exception as e:
+                    question_data['starter_code'] = {}
+        
+                try:
+                    question_data['description'] = self._get_description(question.id)
+                except Exception as e:
+                    question_data['description'] = "# Error Loading Description"
+        
                 # Add languages and topics
                 question_data['languages'] = LanguageSerializer(question.languages.all(), many=True).data
                 question_data['topics'] = TopicSerializer(question.topics.all(), many=True).data
-                
+        
                 return Response(question_data, status=status.HTTP_200_OK)
                 
             except Question.DoesNotExist:

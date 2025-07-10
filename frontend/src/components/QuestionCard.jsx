@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Code, Clock, Trash2 } from 'lucide-react'
+import { Code, Clock, Trash2, Play, Target, Trophy } from 'lucide-react'
 import { Card, CardContent } from './ui/Card'
 import Button from './ui/Button'
 import Badge from './ui/Badge'
@@ -14,6 +14,15 @@ const QuestionCard = ({ question, onDelete }) => {
       case 'medium': return 'warning'
       case 'hard': return 'error'
       default: return 'neutral'
+    }
+  }
+
+  const getDifficultyGradient = (difficulty) => {
+    switch (difficulty?.toLowerCase()) {
+      case 'easy': return 'from-green-500 to-emerald-500'
+      case 'medium': return 'from-yellow-500 to-orange-500'
+      case 'hard': return 'from-red-500 to-pink-500'
+      default: return 'from-gray-500 to-slate-500'
     }
   }
 
@@ -49,46 +58,92 @@ const QuestionCard = ({ question, onDelete }) => {
   }
 
   return (
-    <Card className="bg-base-200 hover:shadow-xl transition-shadow">
-      <CardContent>
-        <div className="flex justify-between items-start mb-3">
-          <h2 className="card-title text-lg">{question.title || 'Untitled Question'}</h2>
-          <div className="flex items-center gap-2">
-            <Badge variant={getDifficultyColor(question.difficulty)}>
-              {question.difficulty || 'Medium'}
-            </Badge>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="text-error hover:bg-error hover:text-error-content"
-              title="Delete Question"
-            >
-              <Trash2 size={16} />
-            </Button>
+    <Card className="group relative overflow-hidden bg-white dark:bg-slate-800 border-0 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+      {/* Gradient Border Top */}
+      <div className={`h-1 bg-gradient-to-r ${getDifficultyGradient(question.difficulty)}`}></div>
+      
+      <CardContent className="p-6">
+        {/* Header */}
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              {question.title || 'Untitled Question'}
+            </h2>
+            <div className="flex items-center gap-3">
+              <Badge 
+                variant={getDifficultyColor(question.difficulty)} 
+                className={`bg-gradient-to-r ${getDifficultyGradient(question.difficulty)} text-white border-0 shadow-sm`}
+              >
+                {question.difficulty || 'Medium'}
+              </Badge>
+              <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                <Target size={14} />
+                <span className="text-xs">Challenge</span>
+              </div>
+            </div>
           </div>
+          
+          {/* Delete Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+            title="Delete Question"
+          >
+            <Trash2 size={16} />
+          </Button>
         </div>
-        
-        {/* Display topics as tags */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {question.topics?.map((topic) => (
-            <Badge key={topic.id} variant="outline" size="sm">
+
+        {/* Topics */}
+        <div className="flex flex-wrap gap-2 mb-6 min-h-[2rem]">
+          {question.topics?.slice(0, 3).map((topic) => (
+            <Badge key={topic.id} variant="outline" size="sm" className="bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600">
               {topic.name}
             </Badge>
           ))}
+          {question.topics?.length > 3 && (
+            <Badge variant="outline" size="sm" className="bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-600">
+              +{question.topics.length - 3}
+            </Badge>
+          )}
         </div>
 
-        <div className="card-actions justify-end">
+        {/* Stats */}
+        <div className="flex items-center justify-between mb-6 py-3 px-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+              <Code size={14} />
+              <span>Algorithm</span>
+            </div>
+            <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+              <Clock size={14} />
+              <span>~30min</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+            <Trophy size={14} />
+            <span className="text-sm font-medium">100 pts</span>
+          </div>
+        </div>
+
+        {/* Action Button */}
+        <div className="flex gap-3">
           <Button
             as={Link}
             to={`/questions/${question.id}`}
             variant="primary"
-            size="sm"
+            size="md"
+            icon={<Play size={16} />}
+            className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 border-0 shadow-lg"
           >
-            Solve Challenge
+            Start Challenge
           </Button>
         </div>
+
+        {/* Hover Effect Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
       </CardContent>
     </Card>
   )
